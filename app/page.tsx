@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { JobCard } from "@/components/JobCard";
@@ -6,7 +7,20 @@ import { ButtonLink, Container } from "@/components/ui";
 import { getPublishedJobs } from "@/lib/queries";
 import { INDUSTRIES } from "@/lib/constants";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string; next?: string }>;
+}) {
+  // Safety net: if an auth code lands on the homepage (Supabase falling back to
+  // the Site URL instead of /auth/callback), forward it to the callback.
+  const { code, next } = await searchParams;
+  if (code) {
+    const params = new URLSearchParams({ code });
+    if (next) params.set("next", next);
+    redirect(`/auth/callback?${params.toString()}`);
+  }
+
   const featured = await getPublishedJobs({ limit: 6 });
 
   return (
