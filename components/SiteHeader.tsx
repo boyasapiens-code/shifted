@@ -60,6 +60,9 @@ export async function SiteHeader() {
             <Link href="/about" className="hover:text-ink">
               How it works
             </Link>
+            <Link href="/rights" className="hover:text-ink">
+              Know Your Rights
+            </Link>
             {isAdmin && (
               <Link href="/admin/verifications" className="font-medium text-signal hover:underline">
                 Admin
