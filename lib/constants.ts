@@ -1,4 +1,4 @@
-import type { EmploymentType, Industry, ApplicationStatus } from "./types";
+import type { EmploymentType, Industry, ApplicationStatus, PlanTier } from "./types";
 
 export const INDUSTRIES: { value: Industry; label: string }[] = [
   { value: "restaurant", label: "Restaurant" },
@@ -133,12 +133,60 @@ export function isBoosted(boostedUntil: string | null | undefined): boolean {
   return !!boostedUntil && new Date(boostedUntil).getTime() > Date.now();
 }
 
-export const PRO_FEATURES: string[] = [
-  "Boost jobs to the top of search",
-  "Featured employer placement",
-  "Priority in candidate discovery",
-  "Unlimited active job posts",
+// Employer subscription tiers (CLAUDE.md: Free / Starter ฿990 / Growth ฿2,490).
+// Enum value 'pro' is the Starter tier. Prices are test hypotheses.
+export const PLANS: {
+  key: PlanTier;
+  name: string;
+  price: number;
+  features: string[];
+}[] = [
+  {
+    key: "free",
+    name: "Free",
+    price: 0,
+    features: [
+      "Post jobs & review applicants",
+      "Verification & reference network",
+      "Two-way reviews",
+    ],
+  },
+  {
+    key: "pro",
+    name: "Starter",
+    price: 990,
+    features: [
+      "Featured employer placement",
+      "Priority in candidate discovery",
+      "Discounted job boosts",
+    ],
+  },
+  {
+    key: "growth",
+    name: "Growth",
+    price: 2490,
+    features: [
+      "Everything in Starter",
+      "Workforce insights & pay benchmarks",
+      "Bundled SOPs & training",
+      "Priority support",
+    ],
+  },
 ];
+
+export const PLAN_NAME: Record<PlanTier, string> = {
+  free: "Free",
+  pro: "Starter",
+  growth: "Growth",
+};
+
+/** A boost is standalone pay-per-use (the lowest-friction first revenue). */
+export const BOOST_PRICE = 299; // THB, within the 199–499 test range
+
+/** Is the employer on a paid subscription tier? */
+export function isPaidPlan(plan: PlanTier | null | undefined): boolean {
+  return plan === "pro" || plan === "growth";
+}
 
 /** Format a job's salary range as a compact THB string. */
 export function formatSalary(

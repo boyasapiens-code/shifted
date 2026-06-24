@@ -16,7 +16,7 @@ import type { ApplicationStatus, EmploymentType } from "@/lib/types";
 import { setApplicationStatus, setJobStatus, startEngagement } from "../../actions";
 import { messageWorker } from "@/app/messages/actions";
 import { boostJob } from "../../billing/actions";
-import { isBoosted } from "@/lib/constants";
+import { isBoosted, BOOST_PRICE } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Manage job" };
 
@@ -95,7 +95,9 @@ export default async function ManageJobPage({
                   <Badge tone="blue">Promoted</Badge>
                 ) : (
                   <form action={boostJob.bind(null, job.id)}>
-                    <button className={buttonClass("ghost", "sm")}>Boost</button>
+                    <button className={buttonClass("ghost", "sm")}>
+                      Boost · ฿{BOOST_PRICE}
+                    </button>
                   </form>
                 ))}
             </div>

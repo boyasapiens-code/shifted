@@ -13,21 +13,21 @@ async function requireUser() {
   return { supabase, user };
 }
 
-async function isPro(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
+async function isPaid(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
   const { data } = await supabase
     .from("employer_profiles")
     .select("plan")
     .eq("id", id)
     .single();
-  return data?.plan === "pro";
+  return data?.plan === "pro" || data?.plan === "growth";
 }
 
-/** STUB: activate Pro without taking payment. Real billing is out of scope. */
-export async function upgradeToPro() {
+/** STUB: activate a paid tier without taking payment. */
+export async function upgradeTo(tier: "pro" | "growth") {
   const { supabase, user } = await requireUser();
   await supabase
     .from("employer_profiles")
-    .update({ plan: "pro", plan_since: new Date().toISOString() })
+    .update({ plan: tier, plan_since: new Date().toISOString() })
     .eq("id", user.id);
   revalidatePath("/employer", "layout");
   redirect("/employer/billing?upgraded=1");
@@ -43,10 +43,10 @@ export async function downgradeToFree() {
   redirect("/employer/billing");
 }
 
-/** Featured employer placement — Pro only. */
+/** Featured employer placement — paid plans only. */
 export async function toggleFeatured() {
   const { supabase, user } = await requireUser();
-  if (!(await isPro(supabase, user.id))) redirect("/employer/billing?gate=featured");
+  if (!(await isPaid(supabase, user.id))) redirect("/employer/billing?gate=featured");
   const { data } = await supabase
     .from("employer_profiles")
     .select("featured")
@@ -60,10 +60,9 @@ export async function toggleFeatured() {
   revalidatePath("/employer");
 }
 
-/** Boost a job to the top of search for 30 days — Pro only. */
+/** Boost a job to the top of search for 30 days — standalone pay-per-use. */
 export async function boostJob(jobId: string) {
   const { supabase, user } = await requireUser();
-  if (!(await isPro(supabase, user.id))) redirect("/employer/billing?gate=boost");
   const until = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await supabase
     .from("jobs")

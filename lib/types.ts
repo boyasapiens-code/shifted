@@ -29,7 +29,7 @@ export type ApplicationStatus =
   | "withdrawn";
 
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
-export type PlanTier = "free" | "pro";
+export type PlanTier = "free" | "pro" | "growth";
 
 export interface Profile {
   id: string;

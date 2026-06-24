@@ -4,12 +4,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, buttonClass } from "@/components/ui";
 import { requireEmployer } from "@/lib/auth";
-import { PRO_FEATURES, OUTCOME_PRICING } from "@/lib/constants";
-import {
-  upgradeToPro,
-  downgradeToFree,
-  toggleFeatured,
-} from "./actions";
+import { PLANS, PLAN_NAME, isPaidPlan, BOOST_PRICE, OUTCOME_PRICING } from "@/lib/constants";
+import type { PlanTier } from "@/lib/types";
+import { upgradeTo, downgradeToFree, toggleFeatured } from "./actions";
 
 export const metadata: Metadata = { title: "Plan & billing" };
 
@@ -26,7 +23,8 @@ export default async function BillingPage({
     .select("plan, featured")
     .eq("id", user.id)
     .single();
-  const isPro = employer?.plan === "pro";
+  const plan = (employer?.plan ?? "free") as PlanTier;
+  const isPaid = isPaidPlan(plan);
 
   // Outcome-aligned billing ledger.
   const { data: events } = await supabase
@@ -47,9 +45,7 @@ export default async function BillingPage({
           </Link>
           <div className="mt-3 flex items-center gap-3">
             <h1 className="text-3xl font-semibold tracking-tight">Plan &amp; billing</h1>
-            <Badge tone={isPro ? "green" : "default"}>
-              {isPro ? "Pro" : "Free"}
-            </Badge>
+            <Badge tone={isPaid ? "green" : "default"}>{PLAN_NAME[plan]}</Badge>
           </div>
           <p className="mt-1 text-stone-500">
             Free for workers, always. Employers upgrade for reach.
@@ -147,78 +143,83 @@ export default async function BillingPage({
             Extra reach on top of outcome pricing.
           </p>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {/* Free */}
-            <div className="rounded-[var(--radius-base)] border border-stone-200 p-6">
-              <p className="eyebrow">Free</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight">฿0</p>
-              <ul className="mt-4 space-y-2 text-sm text-stone-600">
-                <li>Post jobs &amp; review applicants</li>
-                <li>Verification &amp; reference network</li>
-                <li>Two-way reviews</li>
-              </ul>
-              {!isPro && (
-                <p className="mt-5 text-sm font-medium text-stone-500">
-                  Your current plan
-                </p>
-              )}
-              {isPro && (
-                <form action={downgradeToFree} className="mt-5">
-                  <button className={buttonClass("outline", "sm", "w-full")}>
-                    Downgrade to Free
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Pro */}
-            <div className="rounded-[var(--radius-base)] border-2 border-signal p-6">
-              <div className="flex items-center justify-between">
-                <p className="eyebrow text-signal">Pro</p>
-                <Badge tone="blue">Most popular</Badge>
-              </div>
-              <p className="mt-2 text-3xl font-semibold tracking-tight">
-                ฿990<span className="text-base font-normal text-stone-500">/mo</span>
-              </p>
-              <ul className="mt-4 space-y-2 text-sm text-stone-600">
-                {PRO_FEATURES.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <span className="text-signal">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-              {isPro ? (
-                <p className="mt-5 text-sm font-medium text-signal">Your current plan</p>
-              ) : (
-                <form action={upgradeToPro} className="mt-5">
-                  <button className={buttonClass("primary", "md", "w-full")}>
-                    Upgrade to Pro
-                  </button>
-                </form>
-              )}
-            </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            {PLANS.map((p) => {
+              const current = plan === p.key;
+              const featured = p.key === "pro";
+              return (
+                <div
+                  key={p.key}
+                  className={`rounded-[var(--radius-card)] p-6 ${
+                    featured ? "border-2 border-signal" : "border border-stone-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className={`eyebrow ${featured ? "text-signal" : ""}`}>{p.name}</p>
+                    {featured && <Badge tone="blue">Most popular</Badge>}
+                  </div>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight">
+                    ฿{p.price.toLocaleString("en-US")}
+                    {p.price > 0 && (
+                      <span className="text-base font-normal text-stone-500">/mo</span>
+                    )}
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm text-stone-600">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex gap-2">
+                        <span className={featured ? "text-signal" : "text-stone-400"}>✓</span> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {current ? (
+                    <p className="mt-5 text-sm font-medium text-signal">Your current plan</p>
+                  ) : p.key === "free" ? (
+                    <form action={downgradeToFree} className="mt-5">
+                      <button className={buttonClass("outline", "sm", "w-full")}>
+                        Downgrade
+                      </button>
+                    </form>
+                  ) : (
+                    <form action={upgradeTo.bind(null, p.key as "pro" | "growth")} className="mt-5">
+                      <button className={buttonClass(featured ? "primary" : "outline", "md", "w-full")}>
+                        Choose {p.name}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Featured employer toggle */}
-          <div className="mt-8 rounded-[var(--radius-base)] border border-stone-200 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-ink">Featured employer</p>
-                <p className="mt-1 text-sm text-stone-600">
-                  Stand out with a Featured badge across SHIFTED.{" "}
-                  {!isPro && "Pro only."}
-                </p>
+          {/* Add-ons: boost (pay-per-use) + featured */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[var(--radius-base)] border border-stone-200 p-5">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-ink">Boost a job</p>
+                <span className="text-sm font-semibold text-ink">
+                  ฿{BOOST_PRICE}/boost
+                </span>
               </div>
-              <form action={toggleFeatured}>
-                <button
-                  className={buttonClass(
-                    employer?.featured ? "primary" : "outline",
-                    "sm",
-                  )}
-                >
-                  {employer?.featured ? "Featured ✓ — turn off" : "Get featured"}
-                </button>
-              </form>
+              <p className="mt-1 text-sm text-stone-600">
+                Pay-per-use — promote any role to the top of search for 30 days.
+                No subscription needed. Boost from a job&apos;s page.
+              </p>
+            </div>
+
+            <div className="rounded-[var(--radius-base)] border border-stone-200 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-medium text-ink">Featured employer</p>
+                  <p className="mt-1 text-sm text-stone-600">
+                    Featured badge across SHIFTED. {!isPaid && "Paid plans only."}
+                  </p>
+                </div>
+                <form action={toggleFeatured}>
+                  <button className={buttonClass(employer?.featured ? "primary" : "outline", "sm")}>
+                    {employer?.featured ? "On — turn off" : "Get featured"}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 

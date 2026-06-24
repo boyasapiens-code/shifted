@@ -7,8 +7,8 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { VerificationBadge, VerificationLadder } from "@/components/VerificationBadge";
 import { RatingSummary } from "@/components/Rating";
 import { requireEmployer } from "@/lib/auth";
-import { INDUSTRY_LABEL, isBoosted } from "@/lib/constants";
-import type { Industry } from "@/lib/types";
+import { INDUSTRY_LABEL, isBoosted, isPaidPlan, PLAN_NAME, BOOST_PRICE } from "@/lib/constants";
+import type { Industry, PlanTier } from "@/lib/types";
 import { boostJob } from "./billing/actions";
 
 export const metadata: Metadata = { title: "Employer dashboard" };
@@ -70,7 +70,9 @@ export default async function EmployerDashboard({
               <h1 className="mt-2 flex flex-wrap items-center gap-2 text-3xl font-semibold tracking-tight">
                 {employer?.company_name}
                 {employer && <VerifiedBadge status={employer.verification} />}
-                {employer?.plan === "pro" && <Badge tone="blue">Pro</Badge>}
+                {employer && isPaidPlan(employer.plan) && (
+                  <Badge tone="blue">{PLAN_NAME[employer.plan as PlanTier]}</Badge>
+                )}
                 {employer?.featured && <Badge tone="amber">Featured</Badge>}
                 {ratePct != null && ratePct >= 75 && (
                   <Badge tone="green">Responsive employer</Badge>
@@ -94,7 +96,7 @@ export default async function EmployerDashboard({
                 Verify{pendingPrompts ? ` (${pendingPrompts})` : ""}
               </ButtonLink>
               <ButtonLink href="/employer/billing" variant="outline">
-                {employer?.plan === "pro" ? "Billing" : "Upgrade"}
+                {employer && isPaidPlan(employer.plan) ? "Billing" : "Plans"}
               </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
@@ -162,7 +164,9 @@ export default async function EmployerDashboard({
                       ) : (
                         job.status === "published" && (
                           <form action={boostJob.bind(null, job.id)}>
-                            <button className={buttonClass("ghost", "sm")}>Boost</button>
+                            <button className={buttonClass("ghost", "sm")}>
+                              Boost · ฿{BOOST_PRICE}
+                            </button>
                           </form>
                         )
                       )}
