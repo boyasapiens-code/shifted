@@ -11,7 +11,7 @@ import {
   formatSalary,
 } from "@/lib/constants";
 import type { ApplicationStatus, EmploymentType } from "@/lib/types";
-import { setApplicationStatus, setJobStatus } from "../../actions";
+import { setApplicationStatus, setJobStatus, startEngagement } from "../../actions";
 
 export const metadata: Metadata = { title: "Manage job" };
 
@@ -131,24 +131,33 @@ export default async function ManageJobPage({
                         )}
                       </div>
 
-                      {/* Pipeline control */}
-                      <form
-                        action={setApplicationStatus.bind(null, app.id, job.id)}
-                        className="flex shrink-0 items-center gap-2"
-                      >
-                        <Select
-                          name="status"
-                          defaultValue={app.status}
-                          className="h-9 text-sm"
+                      {/* Pipeline control + hire */}
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <form
+                          action={setApplicationStatus.bind(null, app.id, job.id)}
+                          className="flex items-center gap-2"
                         >
-                          {PIPELINE.map((s) => (
-                            <option key={s} value={s}>
-                              {APPLICATION_STATUS_LABEL[s]}
-                            </option>
-                          ))}
-                        </Select>
-                        <button className={buttonClass("outline", "sm")}>Save</button>
-                      </form>
+                          <Select
+                            name="status"
+                            defaultValue={app.status}
+                            className="h-9 text-sm"
+                          >
+                            {PIPELINE.map((s) => (
+                              <option key={s} value={s}>
+                                {APPLICATION_STATUS_LABEL[s]}
+                              </option>
+                            ))}
+                          </Select>
+                          <button className={buttonClass("outline", "sm")}>Save</button>
+                        </form>
+                        {c && (
+                          <form action={startEngagement.bind(null, job.id, c.id)}>
+                            <button className={buttonClass("ghost", "sm")}>
+                              Hire · start engagement →
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </div>
                   </li>
                 );

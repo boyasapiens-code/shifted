@@ -53,6 +53,8 @@ export interface CandidateProfile {
   resume_url: string | null;
   portfolio_urls: string[];
   reliability_score: number | null;
+  rating_avg: number | null;
+  rating_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +73,8 @@ export interface EmployerProfile {
   business_registered: boolean;
   salary_transparency: boolean;
   verification: VerificationStatus;
+  rating_avg: number | null;
+  rating_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +105,36 @@ export interface Application {
   candidate_id: string;
   status: ApplicationStatus;
   cover_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EngagementStatus = "active" | "completed" | "cancelled";
+export type AttendanceStatus = "pending" | "on_time" | "late" | "no_show";
+export type ReviewKind = "of_worker" | "of_employer";
+
+export interface Engagement {
+  id: string;
+  employer_id: string;
+  worker_id: string;
+  job_id: string | null;
+  role_title: string | null;
+  status: EngagementStatus;
+  attendance: AttendanceStatus;
+  started_on: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Review {
+  id: string;
+  engagement_id: string;
+  author_id: string;
+  subject_id: string;
+  kind: ReviewKind;
+  rating: number;
+  comment: string | null;
   created_at: string;
   updated_at: string;
 }

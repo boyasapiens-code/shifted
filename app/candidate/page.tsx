@@ -4,8 +4,11 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { RatingSummary, RatingStars, ReliabilityBadge } from "@/components/Rating";
+import { ReviewForm } from "@/components/ReviewForm";
 import { requireRole } from "@/lib/auth";
 import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
+import { reviewEmployer } from "./actions";
 
 export const metadata: Metadata = { title: "Your dashboard" };
 
@@ -30,6 +33,20 @@ export default async function CandidateDashboard({
     )
     .eq("candidate_id", user.id)
     .order("created_at", { ascending: false });
+
+  // Work history (engagements) + which the worker has already reviewed.
+  const { data: engagements } = await supabase
+    .from("engagements")
+    .select(
+      "id, role_title, status, attendance, created_at, employer:employer_profiles(id, company_name, verification)",
+    )
+    .eq("worker_id", user.id)
+    .order("created_at", { ascending: false });
+  const { data: myReviews } = await supabase
+    .from("reviews")
+    .select("engagement_id, rating")
+    .eq("author_id", user.id);
+  const reviewedEng = new Map((myReviews ?? []).map((r) => [r.engagement_id, r.rating]));
 
   // Lightweight profile completeness signal.
   const checks = [
@@ -90,7 +107,11 @@ export default async function CandidateDashboard({
               <p className="mt-4 text-sm text-stone-600">
                 {candidate?.headline || "Add a headline so employers know your craft."}
               </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <RatingSummary avg={candidate?.rating_avg ?? null} count={candidate?.rating_count ?? 0} />
+                <ReliabilityBadge score={candidate?.reliability_score ?? null} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {candidate?.open_to_work && <Badge>Open to work</Badge>}
                 {candidate?.location && <Badge>{candidate.location}</Badge>}
               </div>
@@ -162,6 +183,57 @@ export default async function CandidateDashboard({
               )}
             </section>
           </div>
+
+          {/* Work history — verified engagements + review the employer */}
+          {engagements && engagements.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-xl font-semibold tracking-tight">Work history</h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Verified shifts you completed through SHIFTED. This is what builds
+                your reliability.
+              </p>
+              <ul className="mt-4 space-y-3">
+                {engagements.map((e) => {
+                  const emp = Array.isArray(e.employer) ? e.employer[0] : e.employer;
+                  const myRating = reviewedEng.get(e.id);
+                  return (
+                    <li key={e.id} className="rounded-[var(--radius-base)] border border-stone-200 p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="flex items-center gap-1 font-semibold text-ink">
+                            {emp?.company_name ?? "Employer"}
+                            {emp && <VerifiedBadge status={emp.verification} />}
+                          </p>
+                          <p className="text-sm text-stone-500">{e.role_title ?? "Role"}</p>
+                        </div>
+                        <Badge tone={e.status === "completed" ? "green" : "default"}>{e.status}</Badge>
+                      </div>
+
+                      {e.status === "completed" && (
+                        <div className="mt-3 border-t border-stone-100 pt-3">
+                          {myRating ? (
+                            <p className="inline-flex items-center gap-2 text-sm text-stone-600">
+                              <RatingStars value={myRating} /> You reviewed this employer
+                            </p>
+                          ) : (
+                            emp && (
+                              <>
+                                <p className="text-sm font-medium text-ink">Review {emp.company_name}</p>
+                                <ReviewForm
+                                  action={reviewEmployer.bind(null, e.id, emp.id)}
+                                  placeholder="Fair pay, good management, clear shifts…"
+                                />
+                              </>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </Container>
       </main>
       <SiteFooter />

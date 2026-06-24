@@ -17,7 +17,9 @@
       "mcp__visualize__read_me",
       "mcp__visualize__show_widget",
       "Bash(python3 -c \"import json;print\\('employer email:',json.load\\(open\\('scripts/seed-data/employer.json'\\)\\)['email']\\)\")",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(git grep *)",
+      "Bash(grep -E \"\\\\.env\\\\.local$|seed-data/\")"
     ]
   }
 }

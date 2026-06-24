@@ -180,9 +180,25 @@ candidate accounts, so no auth users are created for them.
 - Seeded users are created **passwordless + email-confirmed**; they can sign in
   later via magic link with their own email.
 
+## Reputation (the moat)
+
+Two-way, verified reputation gated to real work ([`0005_reputation.sql`](supabase/migrations/0005_reputation.sql)):
+
+- **Engagements** — an employer records that a worker did a job (status + an
+  `attendance` signal). Employer flow at `/employer/engagements`; hire from an
+  applicant on a job.
+- **Reviews** — one per party per engagement, RLS-gated to *completed*
+  engagements between the two real parties (employer↔worker, both directions).
+- **Aggregates** — rating average/count on both profiles and a worker
+  **reliability score** (attendance-based), maintained by DB triggers and shown
+  on dashboards, the talent directory, and job pages.
+
 ## Roadmap (from the brief)
 
-- Reputation system (reliability score, workplace ratings, response speed)
+- Unified account + Worker/Employer toggle (one account, both sides)
+- In-app messaging (matched parties)
+- Short video/voice profile intro
+- Employer monetization stubs (boost / featured + plan gate)
 - Secure résumé sharing with employers (post-verification)
 - Saved jobs + interview scheduling
 - LINE login

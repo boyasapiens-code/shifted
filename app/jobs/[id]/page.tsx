@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { RatingSummary } from "@/components/Rating";
 import { Badge, ButtonLink, Container, Textarea, buttonClass } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { getJob } from "@/lib/queries";
@@ -62,10 +63,10 @@ export default async function JobDetailPage({
     }
   }
 
-  // Employer workplace media (public bucket).
+  // Employer workplace media + reputation (public).
   const { data: employerMedia } = await supabase
     .from("employer_profiles")
-    .select("photos, description")
+    .select("photos, description, rating_avg, rating_count")
     .eq("id", job.employer_id)
     .maybeSingle();
 
@@ -91,12 +92,18 @@ export default async function JobDetailPage({
                   className="h-10 w-10 rounded-[var(--radius-base)] border border-stone-200 object-cover"
                 />
               )}
-              <div className="flex items-center gap-2 text-stone-600">
+              <div className="flex flex-wrap items-center gap-2 text-stone-600">
                 <span className="font-medium">
                   {job.employer?.company_name ?? "Company"}
                 </span>
                 {job.employer && (
                   <VerifiedBadge status={job.employer.verification} />
+                )}
+                {employerMedia && (employerMedia.rating_count ?? 0) > 0 && (
+                  <RatingSummary
+                    avg={employerMedia.rating_avg}
+                    count={employerMedia.rating_count}
+                  />
                 )}
               </div>
             </div>

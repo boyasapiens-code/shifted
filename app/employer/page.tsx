@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { RatingSummary } from "@/components/Rating";
 import { requireRole } from "@/lib/auth";
 import { INDUSTRY_LABEL } from "@/lib/constants";
 import type { Industry } from "@/lib/types";
@@ -64,8 +65,16 @@ export default async function EmployerDashboard({
                 {employer ? INDUSTRY_LABEL[employer.industry as Industry] : ""}
                 {employer?.location ? ` · ${employer.location}` : ""}
               </p>
+              {employer && (
+                <div className="mt-2">
+                  <RatingSummary avg={employer.rating_avg} count={employer.rating_count} />
+                </div>
+              )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/employer/engagements" variant="outline">
+                Engagements
+              </ButtonLink>
               <ButtonLink href="/employer/profile" variant="outline">
                 Edit company
               </ButtonLink>

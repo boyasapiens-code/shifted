@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container, Input, buttonClass } from "@/components/ui";
+import { RatingSummary, ReliabilityBadge } from "@/components/Rating";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenCandidates } from "@/lib/queries";
 
@@ -72,6 +73,12 @@ export default async function TalentPage({
                         {c.headline ?? "—"}
                         {c.location ? ` · ${c.location}` : ""}
                       </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {c.rating_count > 0 && (
+                          <RatingSummary avg={c.rating_avg} count={c.rating_count} />
+                        )}
+                        <ReliabilityBadge score={c.reliability_score} />
+                      </div>
                       {c.skills.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {c.skills.slice(0, 5).map((s) => (

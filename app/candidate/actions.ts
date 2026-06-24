@@ -40,3 +40,30 @@ export async function updateCandidateProfile(formData: FormData) {
   revalidatePath("/candidate");
   redirect("/candidate?saved=1");
 }
+
+/** Worker reviews an employer for a completed engagement (form action). */
+export async function reviewEmployer(
+  engagementId: string,
+  employerId: string,
+  formData: FormData,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/candidate");
+
+  const rating = Math.max(1, Math.min(5, Number(formData.get("rating") ?? 0)));
+  await supabase.from("reviews").upsert(
+    {
+      engagement_id: engagementId,
+      author_id: user.id,
+      subject_id: employerId,
+      kind: "of_employer",
+      rating,
+      comment: String(formData.get("comment") ?? "").trim() || null,
+    },
+    { onConflict: "engagement_id,author_id" },
+  );
+  revalidatePath("/candidate");
+}

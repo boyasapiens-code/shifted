@@ -93,6 +93,77 @@ export async function setJobStatus(jobId: string, status: "published" | "closed"
   revalidatePath("/employer");
 }
 
+// --- Reputation: engagements + reviewing workers --------------------------
+
+/** Start an engagement (hire) for a worker on one of the employer's jobs. */
+export async function startEngagement(jobId: string, workerId: string) {
+  const { supabase, user } = await requireEmployer();
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("title")
+    .eq("id", jobId)
+    .eq("employer_id", user.id)
+    .single();
+
+  const { error } = await supabase.from("engagements").insert({
+    employer_id: user.id,
+    worker_id: workerId,
+    job_id: jobId,
+    role_title: job?.title ?? null,
+    status: "active",
+  });
+  // 23505 = already engaged for this job; treat as success.
+  if (error && error.code !== "23505") {
+    redirect(`/employer/jobs/${jobId}?error=engage_failed`);
+  }
+  revalidatePath(`/employer/jobs/${jobId}`);
+  revalidatePath("/employer/engagements");
+}
+
+/** Set attendance signal on an engagement (form action: reads `attendance`). */
+export async function setEngagementAttendance(engagementId: string, formData: FormData) {
+  const { supabase, user } = await requireEmployer();
+  await supabase
+    .from("engagements")
+    .update({ attendance: String(formData.get("attendance") ?? "pending") })
+    .eq("id", engagementId)
+    .eq("employer_id", user.id);
+  revalidatePath("/employer/engagements");
+}
+
+/** Mark an engagement completed — unlocks two-way reviews. */
+export async function completeEngagement(engagementId: string) {
+  const { supabase, user } = await requireEmployer();
+  await supabase
+    .from("engagements")
+    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .eq("id", engagementId)
+    .eq("employer_id", user.id);
+  revalidatePath("/employer/engagements");
+}
+
+/** Employer reviews a worker for a completed engagement (form action). */
+export async function reviewWorker(
+  engagementId: string,
+  workerId: string,
+  formData: FormData,
+) {
+  const { supabase, user } = await requireEmployer();
+  const rating = Math.max(1, Math.min(5, Number(formData.get("rating") ?? 0)));
+  await supabase.from("reviews").upsert(
+    {
+      engagement_id: engagementId,
+      author_id: user.id,
+      subject_id: workerId,
+      kind: "of_worker",
+      rating,
+      comment: String(formData.get("comment") ?? "").trim() || null,
+    },
+    { onConflict: "engagement_id,author_id" },
+  );
+  revalidatePath("/employer/engagements");
+}
+
 /** Move an applicant through the pipeline (form action: reads `status`). */
 export async function setApplicationStatus(
   applicationId: string,
