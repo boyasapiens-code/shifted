@@ -5,11 +5,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, Select, buttonClass } from "@/components/ui";
 import { RatingStars, ReliabilityBadge } from "@/components/Rating";
 import { ReviewForm } from "@/components/ReviewForm";
+import { ReferenceForm } from "@/components/ReferenceForm";
 import { requireEmployer } from "@/lib/auth";
 import {
   setEngagementAttendance,
   completeEngagement,
   reviewWorker,
+  submitReference,
 } from "../actions";
 
 export const metadata: Metadata = { title: "Engagements" };
@@ -39,6 +41,13 @@ export default async function EngagementsPage() {
     .select("engagement_id, rating")
     .eq("author_id", user.id);
   const reviewed = new Map((myReviews ?? []).map((r) => [r.engagement_id, r.rating]));
+
+  // References this employer has already left.
+  const { data: myRefs } = await supabase
+    .from("hire_references")
+    .select("engagement_id")
+    .eq("employer_id", user.id);
+  const referenced = new Set((myRefs ?? []).map((r) => r.engagement_id));
 
   return (
     <>
@@ -118,6 +127,30 @@ export default async function EngagementsPage() {
                               />
                             </>
                           )
+                        )}
+
+                        {/* Shared reference network */}
+                        {w && (
+                          <div className="mt-4">
+                            {referenced.has(e.id) ? (
+                              <p className="text-sm text-stone-500">
+                                ✓ Reference added to the network
+                              </p>
+                            ) : (
+                              <>
+                                <p className="text-sm font-medium text-ink">
+                                  Leave a reference
+                                </p>
+                                <p className="text-xs text-stone-500">
+                                  Structured feedback other employers can see — helps
+                                  everyone avoid bad hires.
+                                </p>
+                                <ReferenceForm
+                                  action={submitReference.bind(null, e.id, w.id)}
+                                />
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}

@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, Select, buttonClass } from "@/components/ui";
 import { VerificationBadge } from "@/components/VerificationBadge";
+import { RehireSignal } from "@/components/RehireSignal";
 import { requireEmployer } from "@/lib/auth";
 import {
   APPLICATION_STATUS_LABEL,
@@ -44,7 +45,7 @@ export default async function ManageJobPage({
   const { data: applications } = await supabase
     .from("applications")
     .select(
-      "id, status, cover_note, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work, verification_level)",
+      "id, status, cover_note, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work, verification_level, reference_count, would_rehire_count, no_show_count)",
     )
     .eq("job_id", id)
     .order("created_at", { ascending: false });
@@ -126,6 +127,15 @@ export default async function ManageJobPage({
                             ))}
                           </div>
                         ) : null}
+                        {c && (
+                          <div className="mt-2">
+                            <RehireSignal
+                              refCount={c.reference_count ?? 0}
+                              rehireCount={c.would_rehire_count ?? 0}
+                              noShowCount={c.no_show_count ?? 0}
+                            />
+                          </div>
+                        )}
                         {app.cover_note && (
                           <p className="mt-3 border-l-2 border-stone-200 pl-3 text-sm text-stone-600">
                             {app.cover_note}

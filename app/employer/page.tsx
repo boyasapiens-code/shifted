@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { VerificationBadge, VerificationLadder } from "@/components/VerificationBadge";
 import { RatingSummary } from "@/components/Rating";
 import { requireEmployer } from "@/lib/auth";
 import { INDUSTRY_LABEL } from "@/lib/constants";
@@ -82,28 +83,27 @@ export default async function EmployerDashboard({
             </div>
           </div>
 
-          {/* Verification nudge */}
-          {employer && employer.verification !== "verified" && (
+          {/* Business verification */}
+          {employer && (
             <div className="mt-6 rounded-[var(--radius-base)] border border-stone-200 bg-stone-50 p-5">
-              <p className="font-medium text-ink">Get verified</p>
-              <p className="mt-1 text-sm text-stone-600">
-                Verified employers get more and better applicants. Add business
-                registration, workplace photos, and salary transparency on your{" "}
-                <Link href="/employer/profile" className="underline">
-                  company profile
-                </Link>
-                .
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <Badge>
-                  {employer.business_registered ? "✓" : "—"} Business registered
-                </Badge>
-                <Badge>
-                  {employer.salary_transparency ? "✓" : "—"} Salary transparency
-                </Badge>
-                <Badge>
-                  {employer.photos?.length ? "✓" : "—"} Workplace photos
-                </Badge>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-ink">Business verification</p>
+                    <VerificationBadge level={employer.verification_level} kind="employer" showZero />
+                  </div>
+                  <p className="mt-1 text-sm text-stone-600">
+                    Earn a trust badge so candidates can filter to verified
+                    employers. Clear all 4 layers — Legal, Online, Customer
+                    reviews, Peer references.
+                  </p>
+                </div>
+                <ButtonLink href="/employer/verification" variant="outline" size="sm">
+                  {employer.verification_level >= 4 ? "View verification" : "Get verified →"}
+                </ButtonLink>
+              </div>
+              <div className="mt-3">
+                <VerificationLadder level={employer.verification_level} />
               </div>
             </div>
           )}

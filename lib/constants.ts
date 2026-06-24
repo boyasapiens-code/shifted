@@ -75,6 +75,41 @@ export const VERIFICATION_LEVEL_NAME: Record<number, string> = Object.fromEntrie
   VERIFICATION_LEVELS.map((l) => [l.level, l.name]),
 );
 
+export const EMPLOYER_VERIFICATION_LAYERS: {
+  level: number;
+  name: string;
+  blurb: string;
+  hint: string;
+}[] = [
+  {
+    level: 1,
+    name: "Legal & compliance",
+    blurb: "A real, registered, compliant business.",
+    hint: "DBD company registration, VAT registration (if applicable), social security registration, and other official documents.",
+  },
+  {
+    level: 2,
+    name: "Online presence",
+    blurb: "A real, active, consistent business.",
+    hint: "Your official website, Google Business listing, and social channels.",
+  },
+  {
+    level: 3,
+    name: "Customer reviews",
+    blurb: "A genuine, functioning operation.",
+    hint: "Verified customer feedback and testimonials (links or uploads).",
+  },
+  {
+    level: 4,
+    name: "Peer & partner reviews",
+    blurb: "Credible to those who've worked with you.",
+    hint: "References from business partners, suppliers, and peers.",
+  },
+];
+
+export const EMPLOYER_VERIFICATION_LAYER_NAME: Record<number, string> =
+  Object.fromEntries(EMPLOYER_VERIFICATION_LAYERS.map((l) => [l.level, l.name]));
+
 /** Format a job's salary range as a compact THB string. */
 export function formatSalary(
   min: number | null,

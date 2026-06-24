@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 const JOB_SELECT =
-  "*, employer:employer_profiles(company_name, slug, logo_url, location, verification, industry)";
+  "*, employer:employer_profiles!inner(company_name, slug, logo_url, location, verification, verification_level, industry)";
 
 export interface JobFilters {
   q?: string;
@@ -16,6 +16,7 @@ export interface JobFilters {
   location?: string;
   salaryMin?: number;
   shiftWork?: boolean;
+  employerMinLevel?: number;
   limit?: number;
 }
 
@@ -40,6 +41,8 @@ export async function getPublishedJobs(
     if (filters.location) query = query.ilike("location", `%${filters.location}%`);
     if (filters.salaryMin) query = query.gte("salary_max", filters.salaryMin);
     if (filters.shiftWork) query = query.eq("shift_work", true);
+    if (filters.employerMinLevel)
+      query = query.gte("employer.verification_level", filters.employerMinLevel);
     if (filters.limit) query = query.limit(filters.limit);
 
     const { data, error } = await query;

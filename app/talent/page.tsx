@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container, Input, Select, buttonClass } from "@/components/ui";
 import { RatingSummary, ReliabilityBadge } from "@/components/Rating";
 import { VerificationBadge } from "@/components/VerificationBadge";
+import { RehireSignal } from "@/components/RehireSignal";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenCandidates } from "@/lib/queries";
 import { VERIFICATION_LEVELS } from "@/lib/constants";
@@ -95,6 +96,13 @@ export default async function TalentPage({
                           <RatingSummary avg={c.rating_avg} count={c.rating_count} />
                         )}
                         <ReliabilityBadge score={c.reliability_score} />
+                      </div>
+                      <div className="mt-2">
+                        <RehireSignal
+                          refCount={c.reference_count}
+                          rehireCount={c.would_rehire_count}
+                          noShowCount={c.no_show_count}
+                        />
                       </div>
                       {c.skills.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">

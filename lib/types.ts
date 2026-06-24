@@ -59,6 +59,9 @@ export interface CandidateProfile {
   rating_avg: number | null;
   rating_count: number;
   verification_level: number;
+  reference_count: number;
+  would_rehire_count: number;
+  no_show_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -94,8 +97,22 @@ export interface EmployerProfile {
   business_registered: boolean;
   salary_transparency: boolean;
   verification: VerificationStatus;
+  verification_level: number;
   rating_avg: number | null;
   rating_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HireReference {
+  id: string;
+  engagement_id: string;
+  worker_id: string;
+  employer_id: string;
+  reliability: number;
+  would_rehire: boolean;
+  no_show: boolean;
+  conduct_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -177,6 +194,12 @@ export interface Staff {
 export type JobWithEmployer = Job & {
   employer: Pick<
     EmployerProfile,
-    "company_name" | "slug" | "logo_url" | "location" | "verification" | "industry"
+    | "company_name"
+    | "slug"
+    | "logo_url"
+    | "location"
+    | "verification"
+    | "verification_level"
+    | "industry"
   > | null;
 };

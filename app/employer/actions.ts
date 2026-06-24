@@ -164,6 +164,29 @@ export async function reviewWorker(
   revalidatePath("/employer/engagements");
 }
 
+/** Leave a structured reference on a worker (shared reference network). */
+export async function submitReference(
+  engagementId: string,
+  workerId: string,
+  formData: FormData,
+) {
+  const { supabase, user } = await requireEmployer();
+  const reliability = Math.max(1, Math.min(5, Number(formData.get("reliability") ?? 0)));
+  await supabase.from("hire_references").upsert(
+    {
+      engagement_id: engagementId,
+      worker_id: workerId,
+      employer_id: user.id,
+      reliability,
+      would_rehire: formData.get("would_rehire") === "on",
+      no_show: formData.get("no_show") === "on",
+      conduct_note: String(formData.get("conduct_note") ?? "").trim() || null,
+    },
+    { onConflict: "engagement_id,employer_id" },
+  );
+  revalidatePath("/employer/engagements");
+}
+
 /** Move an applicant through the pipeline (form action: reads `status`). */
 export async function setApplicationStatus(
   applicationId: string,

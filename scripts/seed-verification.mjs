@@ -58,8 +58,49 @@ for (let i = 0; i < workers.length; i++) {
 }
 console.log(`✓ seeded submissions: ${nApproved} approved, ${nPending} pending`);
 
-// 3) Report resulting badge levels
+// 3) Employer verification — Stash (L1+L2 approved, L3 pending), Greenstead (L1)
+const { data: gs } = await sb.from("employer_profiles").select("id").eq("slug", "greenstead").maybeSingle();
+const empVerif = [
+  { employer_id: emp.id, layer: 1, status: "approved", reviewer_id: emp.id, reviewed_at: now, details: "DBD registration, VAT, and social security on file." },
+  { employer_id: emp.id, layer: 2, status: "approved", reviewer_id: emp.id, reviewed_at: now, details: "Website, Google Business, and IG verified." },
+  { employer_id: emp.id, layer: 3, status: "submitted", details: "Customer testimonials submitted for review." },
+];
+if (gs) empVerif.push({ employer_id: gs.id, layer: 1, status: "approved", reviewer_id: emp.id, reviewed_at: now, details: "Company registration on file." });
+for (const e of empVerif) await sb.from("employer_verification_submissions").upsert(e, { onConflict: "employer_id,layer" });
+console.log("✓ employer verification seeded (Stash L2 + pending L3, Greenstead L1)");
+
+// 4) Engagements + shared references for a few workers
+const { data: job } = await sb.from("jobs").select("id").eq("employer_id", emp.id).maybeSingle();
+const refPlan = [
+  { att: "on_time", rehire: true, noshow: false, rel: 5, note: "Excellent — punctual and great with customers." },
+  { att: "on_time", rehire: true, noshow: false, rel: 4, note: "Reliable, solid team member." },
+  { att: "late", rehire: true, noshow: false, rel: 3, note: "Good worker, occasionally late." },
+  { att: "no_show", rehire: false, noshow: true, rel: 1, note: "No-showed a booked shift without notice." },
+  { att: "on_time", rehire: true, noshow: false, rel: 5, note: "Great attitude, would hire again." },
+];
+let nRef = 0;
+for (let i = 0; i < refPlan.length && i < workers.length; i++) {
+  const w = workers[i], p = refPlan[i];
+  const { data: eng } = await sb
+    .from("engagements")
+    .upsert(
+      { employer_id: emp.id, worker_id: w.id, job_id: job?.id ?? null, role_title: "Budtender", status: "completed", attendance: p.att, completed_at: now },
+      { onConflict: "employer_id,worker_id,job_id" },
+    )
+    .select("id")
+    .single();
+  if (eng) {
+    await sb.from("hire_references").upsert(
+      { engagement_id: eng.id, worker_id: w.id, employer_id: emp.id, reliability: p.rel, would_rehire: p.rehire, no_show: p.noshow, conduct_note: p.note },
+      { onConflict: "engagement_id,employer_id" },
+    );
+    nRef++;
+  }
+}
+console.log(`✓ ${nRef} engagements + references seeded`);
+
+// 5) Report resulting badge levels
 const ids = workers.map((w) => w.id);
-const { data: levels } = await sb.from("candidate_profiles").select("full_name, verification_level").in("id", ids).order("verification_level", { ascending: false });
-levels.forEach((l) => console.log(`    ${l.full_name}: level ${l.verification_level}`));
+const { data: levels } = await sb.from("candidate_profiles").select("full_name, verification_level, reliability_score, reference_count, would_rehire_count").in("id", ids).order("verification_level", { ascending: false });
+levels.forEach((l) => console.log(`    ${l.full_name}: L${l.verification_level} · reliability ${l.reliability_score ?? "—"} · refs ${l.reference_count} (${l.would_rehire_count} rehire)`));
 console.log("DONE");

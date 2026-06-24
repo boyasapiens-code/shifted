@@ -46,3 +46,31 @@ export async function rejectVerification(id: string, formData: FormData) {
     .eq("id", id);
   revalidatePath("/admin/verifications");
 }
+
+export async function approveEmployerVerification(id: string) {
+  const { supabase, user } = await requireAdminUser();
+  await supabase
+    .from("employer_verification_submissions")
+    .update({
+      status: "approved",
+      reviewer_id: user.id,
+      reviewed_at: new Date().toISOString(),
+      review_note: null,
+    })
+    .eq("id", id);
+  revalidatePath("/admin/verifications");
+}
+
+export async function rejectEmployerVerification(id: string, formData: FormData) {
+  const { supabase, user } = await requireAdminUser();
+  await supabase
+    .from("employer_verification_submissions")
+    .update({
+      status: "rejected",
+      reviewer_id: user.id,
+      reviewed_at: new Date().toISOString(),
+      review_note: String(formData.get("note") ?? "").trim() || "Needs more / clearer evidence.",
+    })
+    .eq("id", id);
+  revalidatePath("/admin/verifications");
+}

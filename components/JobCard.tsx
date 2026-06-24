@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { JobWithEmployer } from "@/lib/types";
 import { EMPLOYMENT_TYPE_LABEL, INDUSTRY_LABEL, formatSalary } from "@/lib/constants";
 import { Badge } from "./ui";
-import { VerifiedBadge } from "./VerifiedBadge";
+import { VerificationBadge } from "./VerificationBadge";
 
 export function JobCard({ job }: { job: JobWithEmployer }) {
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
@@ -28,7 +28,7 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-stone-500">
               <span>{job.employer?.company_name ?? "Company"}</span>
               {job.employer && (
-                <VerifiedBadge status={job.employer.verification} />
+                <VerificationBadge level={job.employer.verification_level} kind="employer" />
               )}
             </div>
           </div>

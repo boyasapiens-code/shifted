@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { JobCard } from "@/components/JobCard";
 import { Container, Input, Select, buttonClass } from "@/components/ui";
 import { getPublishedJobs } from "@/lib/queries";
-import { EMPLOYMENT_TYPES, INDUSTRIES } from "@/lib/constants";
+import { EMPLOYMENT_TYPES, INDUSTRIES, EMPLOYER_VERIFICATION_LAYERS } from "@/lib/constants";
 import type { EmploymentType, Industry } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Find work" };
@@ -22,6 +22,7 @@ export default async function JobsPage({
     location: sp.location || undefined,
     salaryMin: sp.salaryMin ? Number(sp.salaryMin) : undefined,
     shiftWork: sp.shiftWork === "1",
+    employerMinLevel: sp.employerMinLevel ? Number(sp.employerMinLevel) : undefined,
   });
 
   return (
@@ -64,6 +65,14 @@ export default async function JobsPage({
               {EMPLOYMENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
+                </option>
+              ))}
+            </Select>
+            <Select name="employerMinLevel" defaultValue={sp.employerMinLevel ?? ""}>
+              <option value="">Any employer</option>
+              {EMPLOYER_VERIFICATION_LAYERS.map((l) => (
+                <option key={l.level} value={l.level}>
+                  Verified employer L{l.level}+
                 </option>
               ))}
             </Select>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { VerificationBadge } from "@/components/VerificationBadge";
 import { RatingSummary } from "@/components/Rating";
 import { Badge, ButtonLink, Container, Textarea, buttonClass } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
@@ -97,7 +97,7 @@ export default async function JobDetailPage({
                   {job.employer?.company_name ?? "Company"}
                 </span>
                 {job.employer && (
-                  <VerifiedBadge status={job.employer.verification} />
+                  <VerificationBadge level={job.employer.verification_level} kind="employer" />
                 )}
                 {employerMedia && (employerMedia.rating_count ?? 0) > 0 && (
                   <RatingSummary
