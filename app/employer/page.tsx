@@ -45,6 +45,14 @@ export default async function EmployerDashboard({
     .eq("employer_id", user.id)
     .order("full_name", { ascending: true });
 
+  const { count: pendingPrompts } = await supabase
+    .from("verification_prompts")
+    .select("*", { count: "exact", head: true })
+    .eq("employer_id", user.id)
+    .eq("status", "pending");
+  const ratePct =
+    employer?.response_rate == null ? null : Math.round(employer.response_rate * 100);
+
   return (
     <>
       <SiteHeader />
@@ -64,6 +72,12 @@ export default async function EmployerDashboard({
                 {employer && <VerifiedBadge status={employer.verification} />}
                 {employer?.plan === "pro" && <Badge tone="blue">Pro</Badge>}
                 {employer?.featured && <Badge tone="amber">Featured</Badge>}
+                {ratePct != null && ratePct >= 75 && (
+                  <Badge tone="green">Responsive employer</Badge>
+                )}
+                {ratePct != null && ratePct < 75 && (
+                  <Badge tone="red">Low responsiveness</Badge>
+                )}
               </h1>
               <p className="mt-1 text-stone-500">
                 {employer ? INDUSTRY_LABEL[employer.industry as Industry] : ""}
@@ -76,6 +90,9 @@ export default async function EmployerDashboard({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/employer/verify">
+                Verify{pendingPrompts ? ` (${pendingPrompts})` : ""}
+              </ButtonLink>
               <ButtonLink href="/employer/billing" variant="outline">
                 {employer?.plan === "pro" ? "Billing" : "Upgrade"}
               </ButtonLink>

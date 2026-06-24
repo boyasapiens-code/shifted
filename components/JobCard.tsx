@@ -31,6 +31,9 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
                 <VerificationBadge level={job.employer.verification_level} kind="employer" />
               )}
               {job.employer?.featured && <Badge tone="amber">Featured</Badge>}
+              {(job.employer?.response_rate ?? 0) >= 0.75 && (
+                <Badge tone="green">Responsive</Badge>
+              )}
             </div>
           </div>
         </div>

@@ -24,6 +24,19 @@ export async function claimSkill(skillId: string, role: string) {
   redirect(`/candidate/skills?role=${role}`);
 }
 
+/** Worker flags a verified badge as disputed → unverified pending review. */
+export async function disputeBadge(promptId: string, role: string) {
+  const { supabase, user } = await requireUser();
+  await supabase
+    .from("verification_prompts")
+    .update({ status: "disputed" })
+    .eq("id", promptId)
+    .eq("worker_id", user.id)
+    .eq("status", "confirmed");
+  revalidatePath("/candidate/skills");
+  redirect(`/candidate/skills?role=${role}`);
+}
+
 /** Worker removes a self-declared skill. */
 export async function unclaimSkill(skillId: string, role: string) {
   const { supabase, user } = await requireUser();

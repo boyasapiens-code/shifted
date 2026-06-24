@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 const JOB_SELECT =
-  "*, employer:employer_profiles!inner(company_name, slug, logo_url, location, verification, verification_level, featured, industry)";
+  "*, employer:employer_profiles!inner(company_name, slug, logo_url, location, verification, verification_level, featured, response_rate, industry)";
 
 export interface JobFilters {
   q?: string;

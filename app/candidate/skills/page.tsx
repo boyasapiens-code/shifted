@@ -6,7 +6,7 @@ import { Container, buttonClass } from "@/components/ui";
 import { SkillChip } from "@/components/SkillChip";
 import { requireWorker } from "@/lib/auth";
 import type { Skill, WorkerSkill } from "@/lib/types";
-import { claimSkill, unclaimSkill } from "./actions";
+import { claimSkill, unclaimSkill, disputeBadge } from "./actions";
 
 export const metadata: Metadata = { title: "Skills & badges" };
 
@@ -39,6 +39,14 @@ export default async function SkillsPage({
     .eq("worker_id", user.id)
     .returns<Pick<WorkerSkill, "skill_id" | "status">[]>();
   const status = new Map((mine ?? []).map((m) => [m.skill_id, m.status]));
+
+  // Confirmed prompts → let the worker flag a badge they dispute.
+  const { data: prompts } = await supabase
+    .from("verification_prompts")
+    .select("id, skill_id, status")
+    .eq("worker_id", user.id)
+    .eq("status", "confirmed");
+  const promptBySkill = new Map((prompts ?? []).map((p) => [p.skill_id, p.id]));
 
   const all = skills ?? [];
   const verified = all.filter((s) => status.get(s.id) === "employer_verified");
@@ -125,7 +133,14 @@ export default async function SkillsPage({
                             isGate={s.is_gate}
                           />
                           {st === "employer_verified" ? (
-                            <span className="text-xs font-medium text-signal">✓ Verified</span>
+                            <span className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-signal">✓ Verified</span>
+                              {promptBySkill.has(s.id) && (
+                                <form action={disputeBadge.bind(null, promptBySkill.get(s.id)!, role ?? "")}>
+                                  <button className="text-[11px] text-stone-400 hover:text-danger">Flag</button>
+                                </form>
+                              )}
+                            </span>
                           ) : st === "self_declared" ? (
                             <form action={unclaimSkill.bind(null, s.id, role ?? "")}>
                               <button className="text-xs text-stone-400 hover:text-ink">Remove</button>

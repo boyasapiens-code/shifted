@@ -102,6 +102,9 @@ export interface EmployerProfile {
   plan: PlanTier;
   plan_since: string | null;
   featured: boolean;
+  response_rate: number | null;
+  prompts_eligible: number;
+  prompts_responded: number;
   rating_avg: number | null;
   rating_count: number;
   created_at: string;
@@ -249,6 +252,7 @@ export type JobWithEmployer = Job & {
     | "verification"
     | "verification_level"
     | "featured"
+    | "response_rate"
     | "industry"
   > | null;
 };

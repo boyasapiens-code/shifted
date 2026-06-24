@@ -131,15 +131,62 @@ export async function setEngagementAttendance(engagementId: string, formData: Fo
   revalidatePath("/employer/engagements");
 }
 
-/** Mark an engagement completed — unlocks two-way reviews. */
+/** Mark an engagement completed — unlocks reviews and generates skill-verification
+ *  prompts (the "shift end" trigger). Auto-provable badges self-confirm; manual
+ *  milestone badges become pending one-tap prompts. */
 export async function completeEngagement(engagementId: string) {
   const { supabase, user } = await requireEmployer();
-  await supabase
+  const now = new Date().toISOString();
+
+  const { data: eng } = await supabase
     .from("engagements")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({ status: "completed", completed_at: now })
     .eq("id", engagementId)
-    .eq("employer_id", user.id);
+    .eq("employer_id", user.id)
+    .select("worker_id, role_title")
+    .single();
+
+  if (eng?.role_title) {
+    const role = eng.role_title.toLowerCase();
+    // Badge skills for this role that need verification.
+    const { data: badgeSkills } = await supabase
+      .from("skills")
+      .select("id, badge_name, verify_method")
+      .eq("role", role)
+      .not("badge_name", "is", null)
+      .in("verify_method", ["manual", "auto"]);
+
+    // Only prompt for skills the worker has actually claimed (and not yet earned).
+    const { data: claimed } = await supabase
+      .from("worker_skills")
+      .select("skill_id, status")
+      .eq("worker_id", eng.worker_id);
+    const claimedStatus = new Map((claimed ?? []).map((c) => [c.skill_id, c.status]));
+
+    for (const s of badgeSkills ?? []) {
+      const st = claimedStatus.get(s.id);
+      if (st !== "self_declared") continue; // not claimed, or already verified
+      if (s.verify_method === "auto") {
+        await supabase.from("verification_prompts").upsert(
+          { worker_id: eng.worker_id, employer_id: user.id, skill_id: s.id, engagement_id: engagementId, badge_type: s.badge_name, method: "auto_pos", status: "confirmed", manager_id: user.id, responded_at: now },
+          { onConflict: "engagement_id,skill_id", ignoreDuplicates: true },
+        );
+        await supabase.from("worker_skills").upsert(
+          { worker_id: eng.worker_id, skill_id: s.id, status: "employer_verified", verified_by: user.id, engagement_id: engagementId, verified_at: now },
+          { onConflict: "worker_id,skill_id" },
+        );
+      } else {
+        await supabase.from("verification_prompts").upsert(
+          { worker_id: eng.worker_id, employer_id: user.id, skill_id: s.id, engagement_id: engagementId, badge_type: s.badge_name, method: "manual", status: "pending" },
+          { onConflict: "engagement_id,skill_id", ignoreDuplicates: true },
+        );
+      }
+    }
+  }
+
   revalidatePath("/employer/engagements");
+  revalidatePath("/employer/verify");
+  revalidatePath("/employer");
 }
 
 /** Employer reviews a worker for a completed engagement (form action). */
