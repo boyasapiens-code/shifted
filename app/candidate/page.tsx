@@ -6,7 +6,7 @@ import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { RatingSummary, RatingStars, ReliabilityBadge } from "@/components/Rating";
 import { ReviewForm } from "@/components/ReviewForm";
-import { requireRole } from "@/lib/auth";
+import { requireWorker } from "@/lib/auth";
 import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
 import { reviewEmployer } from "./actions";
 
@@ -18,7 +18,7 @@ export default async function CandidateDashboard({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { saved } = await searchParams;
-  const { supabase, user, profile } = await requireRole("candidate", "/candidate");
+  const { supabase, user, profile } = await requireWorker("/candidate");
 
   const { data: candidate } = await supabase
     .from("candidate_profiles")

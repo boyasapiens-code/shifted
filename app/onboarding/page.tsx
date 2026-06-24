@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { getAccount } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { Button, Input, buttonClass } from "@/components/ui";
 import { chooseCandidate, chooseEmployer } from "./actions";
@@ -8,20 +8,17 @@ import { chooseCandidate, chooseEmployer } from "./actions";
 export const metadata: Metadata = { title: "Get started" };
 
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, hasWorker, hasEmployer, activeView } = await getAccount();
   if (!user) redirect("/login?next=/onboarding");
 
-  // Already onboarded? Send them to their dashboard.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role === "candidate") redirect("/candidate");
-  if (profile?.role === "employer") redirect("/employer");
+  // Already onboarded? Send them to their active side (or whichever exists).
+  if (hasWorker || hasEmployer) {
+    redirect(
+      activeView === "employer" || (!hasWorker && hasEmployer)
+        ? "/employer"
+        : "/candidate",
+    );
+  }
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-5 py-12">
@@ -31,8 +28,8 @@ export default async function OnboardingPage() {
           How will you use SHIFTED?
         </h1>
         <p className="mt-2 mb-8 text-stone-500">
-          This sets up your account. You can&apos;t be both — pick the one that
-          fits you today.
+          Pick where to start. It&apos;s one account — you can switch on your
+          Employer or Worker side anytime.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">

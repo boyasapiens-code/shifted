@@ -1,5 +1,4 @@
--- SHIFTED — full schema (migrations 0001–0005, in order)
--- Paste into Supabase → SQL Editor → Run (or use scripts/db-apply.mjs per file).
+-- SHIFTED — full schema (migrations 0001–0006, in order)
 
 -- SHIFTED — initial schema
 -- Vetted talent network for Hospitality, Retail & Lifestyle (Thailand).
@@ -598,5 +597,23 @@ create policy "reviews: author update own"
 -- ---------------------------------------------------------------------------
 grant all on engagements to anon, authenticated, service_role;
 grant all on reviews      to anon, authenticated, service_role;
+
+
+-- SHIFTED — unified account.
+-- One account can hold BOTH a candidate (worker) and an employer profile.
+-- `active_view` remembers which side the toggle is on; capability is derived
+-- from which profile rows exist. `profiles.role` is kept for back-compat/admin
+-- but no longer enforces exclusivity.
+-- Run after 0001–0005.
+
+create type account_view as enum ('worker', 'employer');
+
+alter table profiles add column active_view account_view;
+
+-- Backfill from the existing single role.
+update profiles
+set active_view = case when role = 'employer' then 'employer'::account_view
+                       else 'worker'::account_view end
+where active_view is null and role is not null;
 
 

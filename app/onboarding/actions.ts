@@ -16,7 +16,10 @@ async function requireUser() {
 export async function chooseCandidate() {
   const { supabase, user } = await requireUser();
 
-  await supabase.from("profiles").update({ role: "candidate" }).eq("id", user.id);
+  await supabase
+    .from("profiles")
+    .update({ role: "candidate", active_view: "worker" })
+    .eq("id", user.id);
 
   // Seed the candidate profile, carrying over any name from auth metadata.
   const { data: profile } = await supabase
@@ -39,7 +42,10 @@ export async function chooseEmployer(formData: FormData) {
   const companyName = String(formData.get("company_name") ?? "").trim();
   if (!companyName) redirect("/onboarding?error=company_required");
 
-  await supabase.from("profiles").update({ role: "employer" }).eq("id", user.id);
+  await supabase
+    .from("profiles")
+    .update({ role: "employer", active_view: "employer" })
+    .eq("id", user.id);
 
   // Build a unique slug: base, then a short suffix if taken.
   const base = slugify(companyName) || "company";

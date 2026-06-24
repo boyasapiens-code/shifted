@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, Select, buttonClass } from "@/components/ui";
 import { RatingStars, ReliabilityBadge } from "@/components/Rating";
 import { ReviewForm } from "@/components/ReviewForm";
-import { requireRole } from "@/lib/auth";
+import { requireEmployer } from "@/lib/auth";
 import {
   setEngagementAttendance,
   completeEngagement,
@@ -23,7 +23,7 @@ const ATT_LABEL: Record<string, string> = {
 };
 
 export default async function EngagementsPage() {
-  const { supabase, user } = await requireRole("employer", "/employer/engagements");
+  const { supabase, user } = await requireEmployer("/employer/engagements");
 
   const { data: engagements } = await supabase
     .from("engagements")

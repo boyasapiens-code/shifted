@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Container, Field, Input, Select, Textarea, buttonClass } from "@/components/ui";
 import { Uploader } from "@/components/Uploader";
-import { requireRole } from "@/lib/auth";
+import { requireEmployer } from "@/lib/auth";
 import { INDUSTRIES } from "@/lib/constants";
 import { updateEmployerProfile } from "../actions";
 import {
@@ -16,7 +16,7 @@ import {
 export const metadata: Metadata = { title: "Company profile" };
 
 export default async function EmployerProfilePage() {
-  const { supabase, user } = await requireRole("employer", "/employer/profile");
+  const { supabase, user } = await requireEmployer("/employer/profile");
 
   const { data: e } = await supabase
     .from("employer_profiles")

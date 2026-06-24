@@ -2,24 +2,19 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Container, Field, Input, Select, Textarea, buttonClass } from "@/components/ui";
-import { requireRole } from "@/lib/auth";
+import { requireEmployer } from "@/lib/auth";
 import { EMPLOYMENT_TYPES, INDUSTRIES } from "@/lib/constants";
 import { createJob } from "../../actions";
 
 export const metadata: Metadata = { title: "Post a job" };
 
 export default async function NewJobPage() {
-  const { data: employer } = await requireRole("employer", "/employer/jobs/new").then(
-    async ({ supabase, user }) => ({
-      data: (
-        await supabase
-          .from("employer_profiles")
-          .select("industry")
-          .eq("id", user.id)
-          .single()
-      ).data,
-    }),
-  );
+  const { supabase, user } = await requireEmployer("/employer/jobs/new");
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("industry")
+    .eq("id", user.id)
+    .single();
 
   return (
     <>

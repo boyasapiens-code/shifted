@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Container, Field, Input, Textarea, buttonClass } from "@/components/ui";
 import { Uploader } from "@/components/Uploader";
-import { requireRole } from "@/lib/auth";
+import { requireWorker } from "@/lib/auth";
 import { updateCandidateProfile } from "../actions";
 import {
   saveAvatar,
@@ -15,10 +15,7 @@ import {
 export const metadata: Metadata = { title: "Edit profile" };
 
 export default async function CandidateProfilePage() {
-  const { supabase, user, profile } = await requireRole(
-    "candidate",
-    "/candidate/profile",
-  );
+  const { supabase, user, profile } = await requireWorker("/candidate/profile");
 
   const { data: c } = await supabase
     .from("candidate_profiles")

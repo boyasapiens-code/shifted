@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, Select, buttonClass } from "@/components/ui";
-import { requireRole } from "@/lib/auth";
+import { requireEmployer } from "@/lib/auth";
 import {
   APPLICATION_STATUS_LABEL,
   EMPLOYMENT_TYPE_LABEL,
@@ -30,7 +30,7 @@ export default async function ManageJobPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, user } = await requireRole("employer", "/employer");
+  const { supabase, user } = await requireEmployer("/employer");
 
   const { data: job } = await supabase
     .from("jobs")

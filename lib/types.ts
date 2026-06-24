@@ -1,6 +1,7 @@
 // Domain types mirroring supabase/migrations/0001_init.sql.
 
 export type AccountRole = "candidate" | "employer" | "admin";
+export type AccountView = "worker" | "employer";
 
 export type Industry =
   | "restaurant"
@@ -32,6 +33,7 @@ export type VerificationStatus = "unverified" | "pending" | "verified" | "reject
 export interface Profile {
   id: string;
   role: AccountRole | null;
+  active_view: AccountView | null;
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;

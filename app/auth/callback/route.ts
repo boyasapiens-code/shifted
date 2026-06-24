@@ -30,11 +30,12 @@ export async function GET(request: Request) {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("active_view, role")
         .eq("id", user.id)
         .single();
-      if (!profile?.role) destination = "/onboarding";
-      else destination = profile.role === "employer" ? "/employer" : "/candidate";
+      const view = profile?.active_view ?? (profile?.role === "employer" ? "employer" : profile?.role ? "worker" : null);
+      if (!view) destination = "/onboarding";
+      else destination = view === "employer" ? "/employer" : "/candidate";
     }
   }
 

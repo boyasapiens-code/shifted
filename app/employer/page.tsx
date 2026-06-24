@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { RatingSummary } from "@/components/Rating";
-import { requireRole } from "@/lib/auth";
+import { requireEmployer } from "@/lib/auth";
 import { INDUSTRY_LABEL } from "@/lib/constants";
 import type { Industry } from "@/lib/types";
 
@@ -23,7 +23,7 @@ export default async function EmployerDashboard({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { saved } = await searchParams;
-  const { supabase, user } = await requireRole("employer", "/employer");
+  const { supabase, user } = await requireEmployer("/employer");
 
   const { data: employer } = await supabase
     .from("employer_profiles")

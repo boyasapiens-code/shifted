@@ -1,35 +1,35 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAccount } from "@/lib/auth";
 import { Logo } from "./Logo";
+import { ViewToggle } from "./ViewToggle";
 import { ButtonLink, Container, buttonClass } from "./ui";
 
 /**
- * Top navigation. Server component — reads the session and the user's role so
- * the nav adapts to candidate vs. employer vs. signed-out.
+ * Top navigation. Reads the account and adapts: signed-out, or signed-in with a
+ * Worker/Employer view toggle (one account, both sides).
  */
 export async function SiteHeader() {
   let user: { id: string } | null = null;
-  let role: string | null = null;
+  let hasWorker = false;
+  let hasEmployer = false;
+  let activeView: "worker" | "employer" | null = null;
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
-    user = u;
-    if (user) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      role = data?.role ?? null;
-    }
+    const account = await getAccount();
+    user = account.user;
+    hasWorker = account.hasWorker;
+    hasEmployer = account.hasEmployer;
+    activeView = account.activeView;
   } catch {
     // No backend configured / network error — render signed-out nav.
   }
 
+  const onboarded = hasWorker || hasEmployer;
   const dashboardHref =
-    role === "employer" ? "/employer" : role === "candidate" ? "/candidate" : "/onboarding";
+    activeView === "employer" || (!hasWorker && hasEmployer)
+      ? "/employer"
+      : hasWorker
+        ? "/candidate"
+        : "/onboarding";
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200 bg-paper/80 backdrop-blur">
@@ -52,6 +52,11 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              {onboarded && (
+                <div className="hidden sm:block">
+                  <ViewToggle activeView={activeView} />
+                </div>
+              )}
               <ButtonLink href={dashboardHref} variant="ghost" size="sm">
                 Dashboard
               </ButtonLink>
