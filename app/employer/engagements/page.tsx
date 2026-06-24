@@ -15,8 +15,10 @@ import {
   submitReference,
   verifyWorkerSkill,
   unverifyWorkerSkill,
+  logRetention,
 } from "../actions";
 import { messageWorker } from "@/app/messages/actions";
+import { RETENTION_STAGES } from "@/lib/constants";
 import type { Skill } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Engagements" };
@@ -90,6 +92,15 @@ export default async function EngagementsPage() {
     for (const r of ws ?? []) skillStatus.set(`${r.worker_id}:${r.skill_id}`, r.status);
   }
 
+  // Logged retention milestones (outcome events) per engagement.
+  const { data: outcomeEvents } = await supabase
+    .from("billing_events")
+    .select("engagement_id, type")
+    .eq("employer_id", user.id);
+  const loggedMilestones = new Set(
+    (outcomeEvents ?? []).map((e) => `${e.engagement_id}:${e.type}`),
+  );
+
   return (
     <>
       <SiteHeader />
@@ -110,6 +121,10 @@ export default async function EngagementsPage() {
                 const w = Array.isArray(e.worker) ? e.worker[0] : e.worker;
                 const myRating = reviewed.get(e.id);
                 const roleSkills = skillsByRole.get((e.role_title ?? "").toLowerCase()) ?? [];
+                const atRisk =
+                  e.attendance === "no_show" ||
+                  e.attendance === "late" ||
+                  (w?.reliability_score ?? 100) < 70;
                 return (
                   <li key={e.id} className="rounded-[var(--radius-base)] border border-stone-200 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -157,6 +172,32 @@ export default async function EngagementsPage() {
                         </form>
                       )}
                     </div>
+
+                    {/* Post-hire retention milestones + churn warning */}
+                    {w && (
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+                        <span className="text-xs font-medium text-stone-500">Retention:</span>
+                        {RETENTION_STAGES.map((m) => {
+                          const logged = loggedMilestones.has(`${e.id}:${m.type}`);
+                          return logged ? (
+                            <span key={m.type} className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
+                              ✓ {m.label}
+                            </span>
+                          ) : (
+                            <form key={m.type} action={logRetention.bind(null, e.id, m.type)}>
+                              <button className="rounded-full border border-dashed border-stone-300 px-2.5 py-0.5 text-xs text-stone-500 hover:border-ink hover:text-ink">
+                                + {m.label}
+                              </button>
+                            </form>
+                          );
+                        })}
+                        {atRisk && (
+                          <span className="ml-auto rounded-full bg-danger/10 px-2.5 py-0.5 text-xs font-medium text-danger">
+                            ⚠ At risk
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* One-tap skill verification (the linchpin) */}
                     {e.status === "completed" && w && roleSkills.length > 0 && (

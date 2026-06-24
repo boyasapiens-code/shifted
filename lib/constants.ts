@@ -110,6 +110,24 @@ export const EMPLOYER_VERIFICATION_LAYERS: {
 export const EMPLOYER_VERIFICATION_LAYER_NAME: Record<number, string> =
   Object.fromEntries(EMPLOYER_VERIFICATION_LAYERS.map((l) => [l.level, l.name]));
 
+// Outcome-aligned pricing: employers are billed on outcomes, not clicks.
+export const OUTCOME_PRICING: Record<
+  string,
+  { label: string; amount: number; blurb: string }
+> = {
+  hire_confirmed: { label: "Confirmed hire", amount: 1500, blurb: "When a placement starts" },
+  retention_30: { label: "Stayed 30 days", amount: 500, blurb: "Worker still on the team" },
+  retention_60: { label: "Stayed 60 days", amount: 500, blurb: "Worker still on the team" },
+  retention_90: { label: "Stayed 90 days", amount: 1000, blurb: "Retention milestone" },
+  qualified_match: { label: "Qualified match", amount: 0, blurb: "Accepted match" },
+};
+
+export const RETENTION_STAGES: { type: string; label: string }[] = [
+  { type: "retention_30", label: "Day 30" },
+  { type: "retention_60", label: "Day 60" },
+  { type: "retention_90", label: "Day 90" },
+];
+
 /** Is a job currently boosted (promoted)? */
 export function isBoosted(boostedUntil: string | null | undefined): boolean {
   return !!boostedUntil && new Date(boostedUntil).getTime() > Date.now();

@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, buttonClass } from "@/components/ui";
 import { requireEmployer } from "@/lib/auth";
-import { PRO_FEATURES } from "@/lib/constants";
+import { PRO_FEATURES, OUTCOME_PRICING } from "@/lib/constants";
 import {
   upgradeToPro,
   downgradeToFree,
@@ -27,6 +27,15 @@ export default async function BillingPage({
     .eq("id", user.id)
     .single();
   const isPro = employer?.plan === "pro";
+
+  // Outcome-aligned billing ledger.
+  const { data: events } = await supabase
+    .from("billing_events")
+    .select("id, type, amount_thb, occurred_at, worker:candidate_profiles(full_name)")
+    .eq("employer_id", user.id)
+    .order("occurred_at", { ascending: false })
+    .limit(20);
+  const accrued = (events ?? []).reduce((sum, e) => sum + (e.amount_thb ?? 0), 0);
 
   return (
     <>
@@ -63,7 +72,82 @@ export default async function BillingPage({
             </p>
           )}
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {/* Outcome-aligned pricing — the wedge */}
+          <section className="mt-8 rounded-[var(--radius-card)] border-2 border-ink p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="eyebrow">How you pay</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+                  You pay for outcomes — never clicks.
+                </h2>
+                <p className="mt-1 max-w-md text-sm text-stone-600">
+                  Unlike job boards, SHIFTED bills you when you actually hire, and
+                  when your people stay. No paying for unqualified applicants.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(OUTCOME_PRICING)
+                .filter(([k]) => k !== "qualified_match")
+                .map(([k, v]) => (
+                  <div key={k} className="rounded-[var(--radius-base)] bg-stone-50 p-4">
+                    <p className="text-2xl font-semibold tracking-tight">
+                      ฿{v.amount.toLocaleString("en-US")}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium text-ink">{v.label}</p>
+                    <p className="text-xs text-stone-500">{v.blurb}</p>
+                  </div>
+                ))}
+            </div>
+
+            {/* Ledger */}
+            <div className="mt-6 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-ink">Your outcomes</p>
+                <p className="text-sm text-stone-500">
+                  Accrued (preview):{" "}
+                  <span className="font-semibold text-ink">
+                    ฿{accrued.toLocaleString("en-US")}
+                  </span>
+                </p>
+              </div>
+              {events && events.length > 0 ? (
+                <ul className="mt-3 divide-y divide-stone-100">
+                  {events.map((e) => {
+                    const w = Array.isArray(e.worker) ? e.worker[0] : e.worker;
+                    return (
+                      <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                        <span className="text-ink">
+                          {OUTCOME_PRICING[e.type]?.label ?? e.type}
+                          <span className="text-stone-400"> · {w?.full_name ?? "—"}</span>
+                        </span>
+                        <span className="font-medium text-ink">
+                          ฿{(e.amount_thb ?? 0).toLocaleString("en-US")}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500">
+                  No outcomes yet. Hire a candidate and bill events appear here.
+                </p>
+              )}
+              <p className="mt-3 text-xs text-stone-400">
+                Billing isn&apos;t live yet — events accrue for preview, no charge
+                is taken.
+              </p>
+            </div>
+          </section>
+
+          <h2 className="mt-12 text-lg font-semibold tracking-tight">
+            Optional add-ons
+          </h2>
+          <p className="mt-1 text-sm text-stone-500">
+            Extra reach on top of outcome pricing.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {/* Free */}
             <div className="rounded-[var(--radius-base)] border border-stone-200 p-6">
               <p className="eyebrow">Free</p>

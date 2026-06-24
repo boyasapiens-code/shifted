@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus, EmploymentType, Industry } from "@/lib/types";
+import { OUTCOME_PRICING } from "@/lib/constants";
 
 function toList(value: FormDataEntryValue | null): string[] {
   return String(value ?? "")
@@ -105,19 +106,63 @@ export async function startEngagement(jobId: string, workerId: string) {
     .eq("employer_id", user.id)
     .single();
 
-  const { error } = await supabase.from("engagements").insert({
-    employer_id: user.id,
-    worker_id: workerId,
-    job_id: jobId,
-    role_title: job?.title ?? null,
-    status: "active",
-  });
+  const { data: eng, error } = await supabase
+    .from("engagements")
+    .insert({
+      employer_id: user.id,
+      worker_id: workerId,
+      job_id: jobId,
+      role_title: job?.title ?? null,
+      status: "active",
+    })
+    .select("id")
+    .single();
   // 23505 = already engaged for this job; treat as success.
   if (error && error.code !== "23505") {
     redirect(`/employer/jobs/${jobId}?error=engage_failed`);
   }
+
+  // Outcome-aligned billing: a confirmed hire is a billable event.
+  if (eng) {
+    await supabase.from("billing_events").upsert(
+      {
+        employer_id: user.id,
+        worker_id: workerId,
+        engagement_id: eng.id,
+        type: "hire_confirmed",
+        amount_thb: OUTCOME_PRICING.hire_confirmed.amount,
+      },
+      { onConflict: "engagement_id,type", ignoreDuplicates: true },
+    );
+  }
+
   revalidatePath(`/employer/jobs/${jobId}`);
   revalidatePath("/employer/engagements");
+}
+
+/** Log a retention milestone (worker stayed to day 30/60/90) → outcome event. */
+export async function logRetention(engagementId: string, type: string) {
+  const { supabase, user } = await requireEmployer();
+  if (!OUTCOME_PRICING[type]) return;
+  const { data: eng } = await supabase
+    .from("engagements")
+    .select("worker_id")
+    .eq("id", engagementId)
+    .eq("employer_id", user.id)
+    .single();
+  if (!eng) return;
+  await supabase.from("billing_events").upsert(
+    {
+      employer_id: user.id,
+      worker_id: eng.worker_id,
+      engagement_id: engagementId,
+      type,
+      amount_thb: OUTCOME_PRICING[type].amount,
+    },
+    { onConflict: "engagement_id,type", ignoreDuplicates: true },
+  );
+  revalidatePath("/employer/engagements");
+  revalidatePath("/employer/billing");
 }
 
 /** Set attendance signal on an engagement (form action: reads `attendance`). */
