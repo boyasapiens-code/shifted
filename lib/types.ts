@@ -29,6 +29,7 @@ export type ApplicationStatus =
   | "withdrawn";
 
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+export type PlanTier = "free" | "pro";
 
 export interface Profile {
   id: string;
@@ -98,6 +99,9 @@ export interface EmployerProfile {
   salary_transparency: boolean;
   verification: VerificationStatus;
   verification_level: number;
+  plan: PlanTier;
+  plan_since: string | null;
+  featured: boolean;
   rating_avg: number | null;
   rating_count: number;
   created_at: string;
@@ -132,6 +136,7 @@ export interface Job {
   languages_required: string[];
   experience_required: number;
   status: JobStatus;
+  boosted_until: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -220,6 +225,7 @@ export type JobWithEmployer = Job & {
     | "location"
     | "verification"
     | "verification_level"
+    | "featured"
     | "industry"
   > | null;
 };

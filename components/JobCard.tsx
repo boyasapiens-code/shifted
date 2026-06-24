@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { JobWithEmployer } from "@/lib/types";
-import { EMPLOYMENT_TYPE_LABEL, INDUSTRY_LABEL, formatSalary } from "@/lib/constants";
+import { EMPLOYMENT_TYPE_LABEL, INDUSTRY_LABEL, formatSalary, isBoosted } from "@/lib/constants";
 import { Badge } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
 
@@ -30,6 +30,7 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
               {job.employer && (
                 <VerificationBadge level={job.employer.verification_level} kind="employer" />
               )}
+              {job.employer?.featured && <Badge tone="amber">Featured</Badge>}
             </div>
           </div>
         </div>
@@ -39,6 +40,7 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {isBoosted(job.boosted_until) && <Badge tone="blue">Promoted</Badge>}
         <Badge>{INDUSTRY_LABEL[job.industry]}</Badge>
         <Badge>{EMPLOYMENT_TYPE_LABEL[job.employment_type]}</Badge>
         {job.shift_work && <Badge>Shift work</Badge>}

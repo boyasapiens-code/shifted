@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 const JOB_SELECT =
-  "*, employer:employer_profiles!inner(company_name, slug, logo_url, location, verification, verification_level, industry)";
+  "*, employer:employer_profiles!inner(company_name, slug, logo_url, location, verification, verification_level, featured, industry)";
 
 export interface JobFilters {
   q?: string;
@@ -30,6 +30,8 @@ export async function getPublishedJobs(
       .from("jobs")
       .select(JOB_SELECT)
       .eq("status", "published")
+      // Boosted (promoted) jobs surface first, then newest.
+      .order("boosted_until", { ascending: false, nullsFirst: false })
       .order("published_at", { ascending: false });
 
     if (filters.q) {

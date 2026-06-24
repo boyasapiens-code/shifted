@@ -110,6 +110,18 @@ export const EMPLOYER_VERIFICATION_LAYERS: {
 export const EMPLOYER_VERIFICATION_LAYER_NAME: Record<number, string> =
   Object.fromEntries(EMPLOYER_VERIFICATION_LAYERS.map((l) => [l.level, l.name]));
 
+/** Is a job currently boosted (promoted)? */
+export function isBoosted(boostedUntil: string | null | undefined): boolean {
+  return !!boostedUntil && new Date(boostedUntil).getTime() > Date.now();
+}
+
+export const PRO_FEATURES: string[] = [
+  "Boost jobs to the top of search",
+  "Featured employer placement",
+  "Priority in candidate discovery",
+  "Unlimited active job posts",
+];
+
 /** Format a job's salary range as a compact THB string. */
 export function formatSalary(
   min: number | null,

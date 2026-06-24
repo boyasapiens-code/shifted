@@ -2,13 +2,14 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Badge, ButtonLink, Container } from "@/components/ui";
+import { Badge, ButtonLink, Container, buttonClass } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { VerificationBadge, VerificationLadder } from "@/components/VerificationBadge";
 import { RatingSummary } from "@/components/Rating";
 import { requireEmployer } from "@/lib/auth";
-import { INDUSTRY_LABEL } from "@/lib/constants";
+import { INDUSTRY_LABEL, isBoosted } from "@/lib/constants";
 import type { Industry } from "@/lib/types";
+import { boostJob } from "./billing/actions";
 
 export const metadata: Metadata = { title: "Employer dashboard" };
 
@@ -34,7 +35,7 @@ export default async function EmployerDashboard({
 
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, status, created_at, applications(count)")
+    .select("id, title, status, boosted_until, created_at, applications(count)")
     .eq("employer_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -58,9 +59,11 @@ export default async function EmployerDashboard({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="eyebrow">Employer</p>
-              <h1 className="mt-2 flex items-center gap-2 text-3xl font-semibold tracking-tight">
+              <h1 className="mt-2 flex flex-wrap items-center gap-2 text-3xl font-semibold tracking-tight">
                 {employer?.company_name}
                 {employer && <VerifiedBadge status={employer.verification} />}
+                {employer?.plan === "pro" && <Badge tone="blue">Pro</Badge>}
+                {employer?.featured && <Badge tone="amber">Featured</Badge>}
               </h1>
               <p className="mt-1 text-stone-500">
                 {employer ? INDUSTRY_LABEL[employer.industry as Industry] : ""}
@@ -73,6 +76,9 @@ export default async function EmployerDashboard({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
+              <ButtonLink href="/employer/billing" variant="outline">
+                {employer?.plan === "pro" ? "Billing" : "Upgrade"}
+              </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
               </ButtonLink>
@@ -133,7 +139,18 @@ export default async function EmployerDashboard({
                         {count} {count === 1 ? "applicant" : "applicants"}
                       </p>
                     </div>
-                    <Badge>{STATUS_LABEL[job.status] ?? job.status}</Badge>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {isBoosted(job.boosted_until) ? (
+                        <Badge tone="blue">Promoted</Badge>
+                      ) : (
+                        job.status === "published" && (
+                          <form action={boostJob.bind(null, job.id)}>
+                            <button className={buttonClass("ghost", "sm")}>Boost</button>
+                          </form>
+                        )
+                      )}
+                      <Badge>{STATUS_LABEL[job.status] ?? job.status}</Badge>
+                    </div>
                   </li>
                 );
               })}
