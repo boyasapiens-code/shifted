@@ -34,6 +34,7 @@ export interface Profile {
   id: string;
   role: AccountRole | null;
   active_view: AccountView | null;
+  is_admin: boolean;
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -57,6 +58,24 @@ export interface CandidateProfile {
   reliability_score: number | null;
   rating_avg: number | null;
   rating_count: number;
+  verification_level: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type VerificationItemStatus = "submitted" | "approved" | "rejected";
+
+export interface VerificationSubmission {
+  id: string;
+  candidate_id: string;
+  level: number;
+  status: VerificationItemStatus;
+  details: string | null;
+  evidence: Record<string, unknown>;
+  documents: string[];
+  reviewer_id: string | null;
+  review_note: string | null;
+  reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 }

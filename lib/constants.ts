@@ -39,6 +39,42 @@ export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
   withdrawn: "Withdrawn",
 };
 
+export const VERIFICATION_LEVELS: {
+  level: number;
+  name: string;
+  blurb: string;
+  hint: string;
+}[] = [
+  {
+    level: 1,
+    name: "Identity & basics",
+    blurb: "A real, legally employable person.",
+    hint: "Your ID/passport number, work permit, and any required certifications. Upload clear photos of each document.",
+  },
+  {
+    level: 2,
+    name: "Online persona",
+    blurb: "An authentic, consistent digital footprint.",
+    hint: "Links to your social / professional profiles (Instagram, Facebook, LINE, LinkedIn, TikTok…).",
+  },
+  {
+    level: 3,
+    name: "Credentials & history",
+    blurb: "A true, verified track record.",
+    hint: "Education, work history, and reference/endorsement letters. Upload letters where you have them.",
+  },
+  {
+    level: 4,
+    name: "Skills & attitude",
+    blurb: "Proven skills and team fit.",
+    hint: "Tell us about your skills and experience. A short assessment confirms them and surfaces your working style.",
+  },
+];
+
+export const VERIFICATION_LEVEL_NAME: Record<number, string> = Object.fromEntries(
+  VERIFICATION_LEVELS.map((l) => [l.level, l.name]),
+);
+
 /** Format a job's salary range as a compact THB string. */
 export function formatSalary(
   min: number | null,

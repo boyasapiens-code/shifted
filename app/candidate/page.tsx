@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { RatingSummary, RatingStars, ReliabilityBadge } from "@/components/Rating";
+import { VerificationBadge, VerificationLadder } from "@/components/VerificationBadge";
 import { ReviewForm } from "@/components/ReviewForm";
 import { requireWorker } from "@/lib/auth";
 import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
@@ -115,11 +116,26 @@ export default async function CandidateDashboard({
                 {candidate?.open_to_work && <Badge>Open to work</Badge>}
                 {candidate?.location && <Badge>{candidate.location}</Badge>}
               </div>
+
+              {/* Verification */}
+              <div className="mt-5 rounded-[var(--radius-base)] bg-stone-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-ink">Verification</span>
+                  <VerificationBadge level={candidate?.verification_level ?? 0} showZero />
+                </div>
+                <div className="mt-2">
+                  <VerificationLadder level={candidate?.verification_level ?? 0} />
+                </div>
+                <ButtonLink href="/candidate/verification" size="sm" className="mt-3 w-full">
+                  {(candidate?.verification_level ?? 0) >= 4 ? "View verification" : "Get verified →"}
+                </ButtonLink>
+              </div>
+
               <ButtonLink
                 href="/candidate/profile"
                 variant="outline"
                 size="sm"
-                className="mt-5 w-full"
+                className="mt-3 w-full"
               >
                 Edit profile
               </ButtonLink>

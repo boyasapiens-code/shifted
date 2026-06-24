@@ -67,3 +67,11 @@ export async function requireEmployer(redirectTo: string) {
   if (!hasEmployer) redirect("/onboarding");
   return { supabase, user, profile: profile! };
 }
+
+/** Require an admin (reviewer) account. */
+export async function requireAdmin(redirectTo: string) {
+  const { supabase, user, profile } = await getAccount();
+  if (!user) redirect(`/login?next=${redirectTo}`);
+  if (!profile?.is_admin) redirect("/");
+  return { supabase, user, profile };
+}

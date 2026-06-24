@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, Select, buttonClass } from "@/components/ui";
+import { VerificationBadge } from "@/components/VerificationBadge";
 import { requireEmployer } from "@/lib/auth";
 import {
   APPLICATION_STATUS_LABEL,
@@ -43,7 +44,7 @@ export default async function ManageJobPage({
   const { data: applications } = await supabase
     .from("applications")
     .select(
-      "id, status, cover_note, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work)",
+      "id, status, cover_note, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work, verification_level)",
     )
     .eq("job_id", id)
     .order("created_at", { ascending: false });
@@ -106,8 +107,9 @@ export default async function ManageJobPage({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-ink">{name}</p>
+                          <VerificationBadge level={c?.verification_level ?? 0} />
                           {c?.open_to_work && <Badge>Open to work</Badge>}
                         </div>
                         <p className="text-sm text-stone-500">

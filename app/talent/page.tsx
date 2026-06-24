@@ -1,25 +1,28 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Badge, ButtonLink, Container, Input, buttonClass } from "@/components/ui";
+import { Badge, ButtonLink, Container, Input, Select, buttonClass } from "@/components/ui";
 import { RatingSummary, ReliabilityBadge } from "@/components/Rating";
+import { VerificationBadge } from "@/components/VerificationBadge";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenCandidates } from "@/lib/queries";
+import { VERIFICATION_LEVELS } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Find talent" };
 
 export default async function TalentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; minLevel?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, minLevel } = await searchParams;
+  const min = Number(minLevel) || 0;
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const candidates = user ? await getOpenCandidates(q) : [];
+  const candidates = user ? await getOpenCandidates(q, min) : [];
 
   return (
     <>
@@ -49,8 +52,21 @@ export default async function TalentPage({
             </div>
           ) : (
             <>
-              <form className="mt-8 flex max-w-md gap-2">
-                <Input name="q" defaultValue={q ?? ""} placeholder="Search role or location" />
+              <form className="mt-8 flex max-w-2xl flex-wrap gap-2">
+                <Input
+                  name="q"
+                  defaultValue={q ?? ""}
+                  placeholder="Search role or location"
+                  className="min-w-48 flex-1"
+                />
+                <Select name="minLevel" defaultValue={String(min)} className="w-44">
+                  <option value="0">Any verification</option>
+                  {VERIFICATION_LEVELS.map((l) => (
+                    <option key={l.level} value={l.level}>
+                      Level {l.level}+ verified
+                    </option>
+                  ))}
+                </Select>
                 <button className={buttonClass("primary", "md")}>Search</button>
               </form>
 
@@ -74,6 +90,7 @@ export default async function TalentPage({
                         {c.location ? ` · ${c.location}` : ""}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <VerificationBadge level={c.verification_level} />
                         {c.rating_count > 0 && (
                           <RatingSummary avg={c.rating_avg} count={c.rating_count} />
                         )}

@@ -12,12 +12,14 @@ export async function SiteHeader() {
   let user: { id: string } | null = null;
   let hasWorker = false;
   let hasEmployer = false;
+  let isAdmin = false;
   let activeView: "worker" | "employer" | null = null;
   try {
     const account = await getAccount();
     user = account.user;
     hasWorker = account.hasWorker;
     hasEmployer = account.hasEmployer;
+    isAdmin = account.profile?.is_admin ?? false;
     activeView = account.activeView;
   } catch {
     // No backend configured / network error — render signed-out nav.
@@ -46,6 +48,11 @@ export async function SiteHeader() {
             <Link href="/about" className="hover:text-ink">
               How it works
             </Link>
+            {isAdmin && (
+              <Link href="/admin/verifications" className="font-medium text-signal hover:underline">
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
 

@@ -54,6 +54,7 @@ export async function getPublishedJobs(
  *  returns [] for signed-out visitors (RLS). */
 export async function getOpenCandidates(
   q?: string,
+  minLevel = 0,
 ): Promise<CandidateProfile[]> {
   try {
     const supabase = await createClient();
@@ -61,7 +62,10 @@ export async function getOpenCandidates(
       .from("candidate_profiles")
       .select("*")
       .eq("open_to_work", true)
-      .order("updated_at", { ascending: false })
+      .gte("verification_level", minLevel)
+      // Most-verified first, then most reliable.
+      .order("verification_level", { ascending: false })
+      .order("reliability_score", { ascending: false, nullsFirst: false })
       .limit(48);
     if (q) {
       query = query.or(`headline.ilike.%${q}%,location.ilike.%${q}%`);
