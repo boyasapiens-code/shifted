@@ -19,7 +19,11 @@
       "Bash(python3 -c \"import json;print\\('employer email:',json.load\\(open\\('scripts/seed-data/employer.json'\\)\\)['email']\\)\")",
       "Bash(gh auth *)",
       "Bash(git grep *)",
-      "Bash(grep -E \"\\\\.env\\\\.local$|seed-data/\")"
+      "Bash(grep -E \"\\\\.env\\\\.local$|seed-data/\")",
+      "Bash(git push *)",
+      "Bash(ls -la /Users/nisabo/Documents/Claude/Projects/Shifted/ 2>/dev/null; echo \"---CONTENT---\"; ls -R /Users/nisabo/Shifted/content/rights 2>/dev/null)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { marked } from "marked";
 import { cn } from "./ui";
-import type { RightsArticle, RightsSource } from "@/lib/rights";
-import { isRightsStale } from "@/lib/rights";
+import type { RightsArticle, RightsSource, RightsLang } from "@/lib/rights";
+import { isRightsStale, RIGHTS_COPY } from "@/lib/rights";
 
 /** Renders a section's Markdown (bullets, bold, links) as styled prose. */
 export function RightsProse({ md, className }: { md: string; className?: string }) {
@@ -19,18 +20,21 @@ export function RightsProse({ md, className }: { md: string; className?: string 
 export function BothSides({
   employees,
   employers,
+  lang = "en",
 }: {
   employees: string;
   employers: string;
+  lang?: RightsLang;
 }) {
+  const t = RIGHTS_COPY[lang];
   return (
     <div className="mt-3 grid gap-4 sm:grid-cols-2">
       <div className="rounded-[var(--radius-card)] border border-stone-200 bg-stone-50 p-5">
-        <p className="eyebrow mb-2">For employees</p>
+        <p className="eyebrow mb-2">{t.forEmployees}</p>
         <RightsProse md={employees} />
       </div>
       <div className="rounded-[var(--radius-card)] border border-stone-200 bg-stone-50 p-5">
-        <p className="eyebrow mb-2">For employers</p>
+        <p className="eyebrow mb-2">{t.forEmployers}</p>
         <RightsProse md={employers} />
       </div>
     </div>
@@ -38,13 +42,20 @@ export function BothSides({
 }
 
 /** Last-reviewed badge + staleness flag. */
-export function LastReviewed({ article }: { article: RightsArticle }) {
+export function LastReviewed({
+  article,
+  lang = "en",
+}: {
+  article: RightsArticle;
+  lang?: RightsLang;
+}) {
+  const t = RIGHTS_COPY[lang];
   const stale = isRightsStale(article);
   return (
-    <span className="inline-flex items-center gap-2 text-xs text-stone-500">
+    <span className="inline-flex flex-wrap items-center gap-2 text-xs text-stone-500">
       <span>
-        Reviewed{" "}
-        {new Date(article.last_reviewed).toLocaleDateString("en-GB", {
+        {t.reviewed}{" "}
+        {new Date(article.last_reviewed).toLocaleDateString(t.dateLocale, {
           day: "numeric",
           month: "short",
           year: "numeric",
@@ -52,12 +63,12 @@ export function LastReviewed({ article }: { article: RightsArticle }) {
       </span>
       {article.status === "legal-review" && (
         <span className="rounded-full bg-warning/10 px-2 py-0.5 font-medium text-[#9a6b00]">
-          In legal review
+          {t.inLegalReview}
         </span>
       )}
       {stale && (
         <span className="rounded-full bg-danger/10 px-2 py-0.5 font-medium text-danger">
-          Review due
+          {t.reviewDue}
         </span>
       )}
     </span>
@@ -65,26 +76,32 @@ export function LastReviewed({ article }: { article: RightsArticle }) {
 }
 
 /** Fixed disclaimer required on every article (not hand-written by authors). */
-export function RightsDisclaimer() {
+export function RightsDisclaimer({ lang = "en" }: { lang?: RightsLang }) {
+  const t = RIGHTS_COPY[lang];
   return (
     <div className="mt-10 rounded-[var(--radius-card)] border border-stone-200 bg-stone-50 p-5 text-sm text-stone-600">
-      <p className="font-medium text-ink">Plain-language summary, not legal advice.</p>
+      <p className="font-medium text-ink">{t.disclaimerTitle}</p>
       <p className="mt-1">
-        Laws and figures change. For your situation, confirm with the source or a
-        licensed Thai lawyer. Department of Labour Protection &amp; Welfare hotline:{" "}
-        <span className="font-medium text-ink">1506</span>. Disputes can go to the
-        Labour Court.
+        {t.disclaimerBody}{" "}
+        <span className="font-medium text-ink">1506</span>. {t.hotlineNote}
       </p>
     </div>
   );
 }
 
 /** Sources as footnote links. */
-export function SourceList({ sources }: { sources: RightsSource[] }) {
+export function SourceList({
+  sources,
+  lang = "en",
+}: {
+  sources: RightsSource[];
+  lang?: RightsLang;
+}) {
   if (!sources.length) return null;
+  const t = RIGHTS_COPY[lang];
   return (
     <div className="mt-8">
-      <p className="eyebrow mb-2">Sources</p>
+      <p className="eyebrow mb-2">{t.sources}</p>
       <ul className="space-y-1 text-sm">
         {sources.map((s) => (
           <li key={s.url}>
@@ -99,6 +116,31 @@ export function SourceList({ sources }: { sources: RightsSource[] }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** EN | ไทย switch — links to the same path with/without ?lang=th. */
+export function RightsLangToggle({ path, lang }: { path: string; lang: RightsLang }) {
+  const opts: { code: RightsLang; label: string; href: string }[] = [
+    { code: "en", label: "EN", href: path },
+    { code: "th", label: "ไทย", href: `${path}?lang=th` },
+  ];
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border border-stone-200 p-0.5 text-xs">
+      {opts.map((o) => (
+        <Link
+          key={o.code}
+          href={o.href}
+          hrefLang={o.code}
+          className={cn(
+            "rounded-full px-2.5 py-1 font-medium transition",
+            lang === o.code ? "bg-ink text-paper" : "text-stone-500 hover:text-ink",
+          )}
+        >
+          {o.label}
+        </Link>
+      ))}
     </div>
   );
 }
