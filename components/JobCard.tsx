@@ -9,7 +9,7 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="group flex flex-col gap-3 rounded-[var(--radius-base)] border border-stone-200 bg-paper p-5 transition-colors hover:border-ink"
+      className="group card-interactive flex flex-col gap-3 rounded-[var(--radius-card)] border border-stone-200 bg-paper p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">

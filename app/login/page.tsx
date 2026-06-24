@@ -12,8 +12,9 @@ export default async function LoginPage({
 }) {
   const { next, error } = await searchParams;
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-5 py-12">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-dvh flex-col items-center justify-center px-5 py-12">
+      <div className="grid-texture pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
+      <div className="relative w-full max-w-sm">
         <Logo className="mb-8 text-xl" />
         <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
         <p className="mt-1 mb-6 text-sm text-stone-500">
