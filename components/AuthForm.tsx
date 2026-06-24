@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "./ui";
 
@@ -8,8 +9,15 @@ import { Button, Input } from "./ui";
  * Email magic-link + Google sign-in. LINE login is planned (Supabase supports
  * it via a custom OIDC provider) — wired the same way once the channel is set up.
  */
-export function AuthForm({ next }: { next?: string }) {
+export function AuthForm({
+  next,
+  requireConsent = false,
+}: {
+  next?: string;
+  requireConsent?: boolean;
+}) {
   const [email, setEmail] = useState("");
+  const [agreed, setAgreed] = useState(!requireConsent);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
@@ -60,10 +68,29 @@ export function AuthForm({ next }: { next?: string }) {
 
   return (
     <div className="space-y-4">
+      {requireConsent && (
+        <label className="flex items-start gap-2 text-xs text-stone-600">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--color-ink)]"
+          />
+          <span>
+            I&apos;m 18 or older and agree to SHIFTED&apos;s{" "}
+            <Link href="/legal" className="font-medium text-ink underline">
+              Terms &amp; Privacy Policy
+            </Link>
+            , including processing of verification documents under PDPA.
+          </span>
+        </label>
+      )}
+
       <button
         type="button"
         onClick={signInWithGoogle}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-base)] border border-stone-300 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-stone-50"
+        disabled={!agreed}
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-base)] border border-stone-300 text-sm font-medium text-ink transition-colors hover:border-ink hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <GoogleGlyph />
         Continue with Google
@@ -84,7 +111,11 @@ export function AuthForm({ next }: { next?: string }) {
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
         />
-        <Button type="submit" className="w-full" disabled={status === "sending"}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={status === "sending" || !agreed}
+        >
           {status === "sending" ? "Sending…" : "Email me a sign-in link"}
         </Button>
         {status === "error" && (

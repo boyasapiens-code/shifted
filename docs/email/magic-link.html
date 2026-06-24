@@ -1,0 +1,47 @@
+<!--
+  SHIFTED — Magic Link email template.
+  Paste into Supabase → Authentication → Emails → "Magic Link" template.
+  Uses the {{ .ConfirmationURL }} variable Supabase substitutes at send time.
+-->
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f2f2;padding:32px 0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e6e6;">
+        <tr>
+          <td style="padding:28px 32px 0;">
+            <span style="font-size:18px;font-weight:800;letter-spacing:0.06em;color:#111111;">SHIFTED</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 8px;">
+            <h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#111111;">Your sign-in link</h1>
+            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;color:#525252;">
+              Click below to sign in to SHIFTED. This link works once and expires shortly.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 32px 8px;">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#111111;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 22px;border-radius:8px;">
+              Sign in to SHIFTED
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 32px 28px;">
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#999999;">
+              If you didn&rsquo;t request this, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px;border-top:1px solid #f2f2f2;">
+            <p style="margin:0;font-size:12px;color:#a3a3a3;">
+              SHIFTED — the vetted talent network for Hospitality, Retail &amp; Lifestyle.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

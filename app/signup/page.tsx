@@ -19,12 +19,8 @@ export default async function SignupPage({
         <p className="mt-1 mb-6 text-sm text-stone-500">
           Create your account. You&apos;ll choose candidate or employer next.
         </p>
-        <AuthForm next={next} />
-        <p className="mt-6 text-xs text-stone-400">
-          By continuing you agree to SHIFTED&apos;s Terms and acknowledge our
-          Privacy Policy.
-        </p>
-        <p className="mt-4 text-sm text-stone-500">
+        <AuthForm next={next} requireConsent />
+        <p className="mt-6 text-sm text-stone-500">
           Already have an account?{" "}
           <Link href="/login" className="font-medium text-ink underline">
             Log in
