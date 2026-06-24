@@ -1,0 +1,32 @@
+{
+  "name": "shifted",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SHIFTED — the vetted talent network for Hospitality, Retail & Lifestyle in Thailand.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "seed:extract": "python3 scripts/extract.py",
+    "seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "next": "15.1.6",
+    "pg": "^8.22.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5"
+  }
+}

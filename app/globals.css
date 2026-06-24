@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+  SHIFTED design system — aligned to the official Brand Guidelines.
+  Minimal, editorial, black-and-white with a single electric-blue accent.
+  Typeface: Satoshi. "The right shift can change everything."
+
+  Neutral scale is mapped onto the brand's grays so existing `stone-*`
+  utilities resolve to brand values:
+    stone-50  #FAFAFA   stone-300 #D9D9D9 (Light)
+    stone-100 #F2F2F2   stone-400 #999999
+    stone-200 #E6E6E6   stone-500 #666666
+                        stone-600 #333333
+                        stone-700 #1A1A1A
+*/
+
+@theme {
+  /* Primary */
+  --color-ink: #111111; /* Ink Black */
+  --color-paper: #ffffff; /* White */
+
+  /* Neutral scale (brand grays) */
+  --color-stone-50: #fafafa;
+  --color-stone-100: #f2f2f2; /* Soft Gray */
+  --color-stone-200: #e6e6e6; /* Light Gray */
+  --color-stone-300: #d9d9d9;
+  --color-stone-400: #999999;
+  --color-stone-500: #666666;
+  --color-stone-600: #333333;
+  --color-stone-700: #1a1a1a; /* Dark Gray */
+
+  /* Secondary / status */
+  --color-signal: #1166e4; /* Electric Blue — primary accent */
+  --color-signal-bright: #0a84ff; /* gradient start */
+  --color-success: #22c55e; /* Green */
+  --color-warning: #ffb300; /* Amber */
+  --color-danger: #ff3b30; /* Red */
+
+  /* Typography — Satoshi (loaded via Fontshare in layout) */
+  --font-sans:
+    "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Satoshi", var(--font-sans);
+
+  /* Radius scale: 2 / 4 / 8 / 12 / 16 / 24 / 32 */
+  --radius-base: 0.5rem; /* 8px */
+
+  --tracking-tightest: -0.04em;
+
+  /* Brand gradients */
+  --gradient-ink: linear-gradient(135deg, #000000, #1a1a1a);
+  --gradient-blue: linear-gradient(135deg, #0a84ff, #1166e4);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-tightest);
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  /* Uppercase editorial label */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-stone-500);
+  }
+}

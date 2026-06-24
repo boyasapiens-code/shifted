@@ -1,0 +1,42 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+
+function toList(value: FormDataEntryValue | null): string[] {
+  return String(value ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export async function updateCandidateProfile(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/candidate/profile");
+
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  await supabase.from("profiles").update({ full_name: fullName }).eq("id", user.id);
+
+  await supabase
+    .from("candidate_profiles")
+    .update({
+      full_name: fullName || null,
+      headline: String(formData.get("headline") ?? "").trim() || null,
+      bio: String(formData.get("bio") ?? "").trim() || null,
+      location: String(formData.get("location") ?? "").trim() || null,
+      phone: String(formData.get("phone") ?? "").trim() || null,
+      availability: String(formData.get("availability") ?? "").trim() || null,
+      years_experience: Number(formData.get("years_experience") ?? 0) || 0,
+      open_to_work: formData.get("open_to_work") === "on",
+      languages: toList(formData.get("languages")),
+      skills: toList(formData.get("skills")),
+    })
+    .eq("id", user.id);
+
+  revalidatePath("/candidate");
+  redirect("/candidate?saved=1");
+}
