@@ -37,7 +37,7 @@ export default async function EngagementsPage() {
   const { data: engagements } = await supabase
     .from("engagements")
     .select(
-      "id, role_title, status, attendance, completed_at, created_at, worker:candidate_profiles(id, full_name, headline, reliability_score, rating_avg, rating_count)",
+      "id, role_title, status, attendance, completed_at, created_at, worker:candidate_profiles(id, full_name, headline, reliability_score, reputation_state, rating_avg, rating_count)",
     )
     .eq("employer_id", user.id)
     .order("created_at", { ascending: false });
@@ -135,7 +135,7 @@ export default async function EngagementsPage() {
                           {w?.headline ? ` · ${w.headline}` : ""}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <ReliabilityBadge score={w?.reliability_score ?? null} />
+                          <ReliabilityBadge score={w?.reliability_score ?? null} state={w?.reputation_state} />
                           {(w?.rating_count ?? 0) > 0 && (
                             <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                               <RatingStars value={w!.rating_avg ?? 0} /> {w!.rating_avg?.toFixed(1)}

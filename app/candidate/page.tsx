@@ -12,6 +12,7 @@ import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
 import { reviewEmployer } from "./actions";
 import { messageEmployer } from "@/app/messages/actions";
 import { ARCHETYPES, type ArchetypeKey } from "@/lib/archetypes";
+import { REPUTATION_LABEL, recoveryFactors, type ReputationState } from "@/lib/reputation";
 
 export const metadata: Metadata = { title: "Your dashboard" };
 
@@ -65,6 +66,14 @@ export default async function CandidateDashboard({
     .filter(Boolean) as string[];
   const verifiedSkillCount = verifiedSkills?.length ?? 0;
 
+  // Reputation state + recovery factors.
+  const repState = (candidate?.reputation_state ?? "building") as ReputationState;
+  const repFactors = recoveryFactors({
+    noShow: (engagements ?? []).filter((e) => e.attendance === "no_show").length,
+    lateCancel: (engagements ?? []).filter((e) => e.status === "cancelled").length,
+    lateArrival: (engagements ?? []).filter((e) => e.attendance === "late").length,
+  });
+
   // Lightweight profile completeness signal.
   const checks = [
     !!profile.full_name,
@@ -91,6 +100,45 @@ export default async function CandidateDashboard({
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             {profile.full_name ? `Hi, ${profile.full_name.split(" ")[0]}` : "Your dashboard"}
           </h1>
+
+          {/* Reputation recovery / status panel */}
+          {(repState === "at_risk" || repState === "suspended") && (
+            <div
+              className={`mt-6 rounded-[var(--radius-card)] border p-5 ${
+                repState === "suspended"
+                  ? "border-danger/30 bg-danger/5"
+                  : "border-warning/40 bg-warning/5"
+              }`}
+            >
+              <p className="font-semibold text-ink">
+                {REPUTATION_LABEL[repState]}
+                {candidate?.reliability_score != null && repState === "at_risk" && (
+                  <span className="font-normal text-stone-500"> · {candidate.reliability_score}/100</span>
+                )}
+              </p>
+              {repState === "suspended" ? (
+                <p className="mt-1 text-sm text-stone-700">
+                  Your account is paused pending review after repeated no-shows.
+                  Showing up is everything here — reach out to support to resolve it.
+                </p>
+              ) : (
+                <>
+                  {repFactors.length > 0 && (
+                    <p className="mt-1 text-sm text-stone-700">
+                      What&apos;s pulling it down: {repFactors.join(" · ")}.
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm font-medium text-ink">
+                    Complete 3 shifts on time to return to Active.
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    You&apos;re never banned for a number — old events expire after
+                    90 days, so a clean streak lifts your score quickly.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {/* Profile card */}
@@ -126,7 +174,10 @@ export default async function CandidateDashboard({
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <RatingSummary avg={candidate?.rating_avg ?? null} count={candidate?.rating_count ?? 0} />
-                <ReliabilityBadge score={candidate?.reliability_score ?? null} />
+                <ReliabilityBadge
+                  score={candidate?.reliability_score ?? null}
+                  state={candidate?.reputation_state}
+                />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {candidate?.open_to_work && <Badge>Open to work</Badge>}

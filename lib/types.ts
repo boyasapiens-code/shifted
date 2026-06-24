@@ -57,6 +57,8 @@ export interface CandidateProfile {
   resume_url: string | null;
   portfolio_urls: string[];
   reliability_score: number | null;
+  reputation_state: string;
+  rated_shifts: number;
   rating_avg: number | null;
   rating_count: number;
   verification_level: number;

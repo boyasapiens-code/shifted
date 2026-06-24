@@ -104,7 +104,7 @@ export default async function TalentPage({
                         {c.rating_count > 0 && (
                           <RatingSummary avg={c.rating_avg} count={c.rating_count} />
                         )}
-                        <ReliabilityBadge score={c.reliability_score} />
+                        <ReliabilityBadge score={c.reliability_score} state={c.reputation_state} />
                       </div>
                       <div className="mt-2 space-y-1.5">
                         <RehireSignal
