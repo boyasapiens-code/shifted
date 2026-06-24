@@ -63,6 +63,9 @@ export interface CandidateProfile {
   reference_count: number;
   would_rehire_count: number;
   no_show_count: number;
+  archetype: string | null;
+  archetype_scores: Record<string, number> | null;
+  archetype_taken_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -9,6 +9,7 @@ import { VerifiedSkills } from "@/components/SkillChip";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenCandidates, getVerifiedSkillSummaries } from "@/lib/queries";
 import { VERIFICATION_LEVELS } from "@/lib/constants";
+import { ARCHETYPES, type ArchetypeKey } from "@/lib/archetypes";
 
 export const metadata: Metadata = { title: "Find talent" };
 
@@ -92,6 +93,12 @@ export default async function TalentPage({
                         {c.headline ?? "—"}
                         {c.location ? ` · ${c.location}` : ""}
                       </p>
+                      {c.archetype && ARCHETYPES[c.archetype as ArchetypeKey] && (
+                        <p className="mt-0.5 text-xs font-medium text-signal">
+                          {ARCHETYPES[c.archetype as ArchetypeKey].name} ·{" "}
+                          {ARCHETYPES[c.archetype as ArchetypeKey].tagline}
+                        </p>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <VerificationBadge level={c.verification_level} />
                         {c.rating_count > 0 && (

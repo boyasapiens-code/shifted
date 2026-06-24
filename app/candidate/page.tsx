@@ -11,6 +11,7 @@ import { requireWorker } from "@/lib/auth";
 import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
 import { reviewEmployer } from "./actions";
 import { messageEmployer } from "@/app/messages/actions";
+import { ARCHETYPES, type ArchetypeKey } from "@/lib/archetypes";
 
 export const metadata: Metadata = { title: "Your dashboard" };
 
@@ -143,6 +144,35 @@ export default async function CandidateDashboard({
                 </div>
                 <ButtonLink href="/candidate/verification" size="sm" className="mt-3 w-full">
                   {(candidate?.verification_level ?? 0) >= 4 ? "View verification" : "Get verified →"}
+                </ButtonLink>
+              </div>
+
+              {/* Archetype */}
+              <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-ink">Archetype</span>
+                  {candidate?.archetype && (
+                    <span className="text-xs font-medium text-signal">
+                      {ARCHETYPES[candidate.archetype as ArchetypeKey]?.tagline}
+                    </span>
+                  )}
+                </div>
+                {candidate?.archetype ? (
+                  <p className="mt-1 text-lg font-semibold tracking-tight text-ink">
+                    {ARCHETYPES[candidate.archetype as ArchetypeKey]?.name}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-stone-500">
+                    Take the 2-minute assessment to find your fit.
+                  </p>
+                )}
+                <ButtonLink
+                  href="/candidate/archetype"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full"
+                >
+                  {candidate?.archetype ? "Retake assessment" : "Find your archetype →"}
                 </ButtonLink>
               </div>
 

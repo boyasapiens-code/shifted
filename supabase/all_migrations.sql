@@ -1,4 +1,4 @@
--- SHIFTED — full schema (migrations 0001–0013)
+-- SHIFTED — full schema (migrations 0001–0014)
 
 -- SHIFTED — initial schema
 -- Vetted talent network for Hospitality, Retail & Lifestyle (Thailand).
@@ -1237,5 +1237,17 @@ create policy "vp: admin all"
   on verification_prompts for all using (is_admin()) with check (is_admin());
 
 grant all on verification_prompts to anon, authenticated, service_role;
+
+
+-- SHIFTED — workforce archetypes (Phase B entry layer).
+-- A behavioral archetype derived from a short assessment; re-testable.
+-- Stored on the worker profile; the fit engine lives in app code (lib/archetypes).
+-- Run after 0001–0013.
+
+alter table candidate_profiles add column archetype text;
+alter table candidate_profiles add column archetype_scores jsonb;
+alter table candidate_profiles add column archetype_taken_at timestamptz;
+
+create index candidate_profiles_archetype_idx on candidate_profiles (archetype);
 
 

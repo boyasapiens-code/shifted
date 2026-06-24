@@ -14,6 +14,12 @@ import {
   INDUSTRY_LABEL,
   formatSalary,
 } from "@/lib/constants";
+import {
+  deriveRole,
+  archetypeFit,
+  ARCHETYPES,
+  type ArchetypeKey,
+} from "@/lib/archetypes";
 import { applyToJob } from "./actions";
 
 export async function generateMetadata({
@@ -45,6 +51,11 @@ export default async function JobDetailPage({
 
   let role: string | null = null;
   let existingStatus: string | null = null;
+  let workerArchetype: string | null = null;
+  let fit: "strong" | "open" | null = null;
+  let skillCoverage: { have: number; total: number } | null = null;
+  const roleKey = deriveRole(job.title);
+
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -60,6 +71,33 @@ export default async function JobDetailPage({
         .eq("candidate_id", user.id)
         .maybeSingle();
       existingStatus = app?.status ?? null;
+
+      // Fit for this worker: archetype affinity + verified-skill coverage.
+      const { data: cp } = await supabase
+        .from("candidate_profiles")
+        .select("archetype")
+        .eq("id", user.id)
+        .single();
+      workerArchetype = cp?.archetype ?? null;
+      fit = archetypeFit(workerArchetype as ArchetypeKey | null, roleKey);
+
+      if (roleKey) {
+        const { data: roleSkills } = await supabase
+          .from("skills")
+          .select("id")
+          .eq("role", roleKey)
+          .not("badge_name", "is", null);
+        const total = roleSkills?.length ?? 0;
+        if (total) {
+          const { count: have } = await supabase
+            .from("worker_skills")
+            .select("*", { count: "exact", head: true })
+            .eq("worker_id", user.id)
+            .eq("status", "employer_verified")
+            .in("skill_id", roleSkills!.map((s) => s.id));
+          skillCoverage = { have: have ?? 0, total };
+        }
+      }
     }
   }
 
@@ -164,6 +202,40 @@ export default async function JobDetailPage({
                 {EMPLOYMENT_TYPE_LABEL[job.employment_type]}
                 {job.location ? ` · ${job.location}` : ""}
               </p>
+
+              {/* Fit for the logged-in worker */}
+              {role === "candidate" && (fit || skillCoverage) && (
+                <div className="mt-5 rounded-[var(--radius-base)] bg-stone-50 p-4">
+                  <p className="eyebrow mb-1">Fit for you</p>
+                  {fit && (
+                    <p className="text-sm font-medium text-ink">
+                      {fit === "strong" ? (
+                        <span className="text-signal">
+                          Strong fit — your{" "}
+                          {ARCHETYPES[workerArchetype as ArchetypeKey]?.name} archetype
+                          suits this role
+                        </span>
+                      ) : (
+                        "Open fit — worth a look"
+                      )}
+                    </p>
+                  )}
+                  {!workerArchetype && (
+                    <p className="text-sm text-stone-500">
+                      <Link href="/candidate/archetype" className="underline">
+                        Find your archetype
+                      </Link>{" "}
+                      to see your fit.
+                    </p>
+                  )}
+                  {skillCoverage && (
+                    <p className="mt-1 text-xs text-stone-500">
+                      You have {skillCoverage.have}/{skillCoverage.total} verified
+                      skills for this role.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="mt-6">
                 {applied && (
