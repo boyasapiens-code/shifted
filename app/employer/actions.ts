@@ -164,6 +164,39 @@ export async function reviewWorker(
   revalidatePath("/employer/engagements");
 }
 
+/** One-tap: endorse a worker's skill from a completed engagement (the linchpin). */
+export async function verifyWorkerSkill(
+  engagementId: string,
+  workerId: string,
+  skillId: string,
+) {
+  const { supabase, user } = await requireEmployer();
+  await supabase.from("worker_skills").upsert(
+    {
+      worker_id: workerId,
+      skill_id: skillId,
+      status: "employer_verified",
+      verified_by: user.id,
+      engagement_id: engagementId,
+      verified_at: new Date().toISOString(),
+    },
+    { onConflict: "worker_id,skill_id" },
+  );
+  revalidatePath("/employer/engagements");
+}
+
+/** Remove an endorsement (in case of a mistap). */
+export async function unverifyWorkerSkill(workerId: string, skillId: string) {
+  const { supabase, user } = await requireEmployer();
+  await supabase
+    .from("worker_skills")
+    .delete()
+    .eq("worker_id", workerId)
+    .eq("skill_id", skillId)
+    .eq("verified_by", user.id);
+  revalidatePath("/employer/engagements");
+}
+
 /** Leave a structured reference on a worker (shared reference network). */
 export async function submitReference(
   engagementId: string,

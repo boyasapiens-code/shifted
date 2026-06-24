@@ -5,8 +5,9 @@ import { Badge, ButtonLink, Container, Input, Select, buttonClass } from "@/comp
 import { RatingSummary, ReliabilityBadge } from "@/components/Rating";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { RehireSignal } from "@/components/RehireSignal";
+import { VerifiedSkills } from "@/components/SkillChip";
 import { createClient } from "@/lib/supabase/server";
-import { getOpenCandidates } from "@/lib/queries";
+import { getOpenCandidates, getVerifiedSkillSummaries } from "@/lib/queries";
 import { VERIFICATION_LEVELS } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Find talent" };
@@ -24,6 +25,7 @@ export default async function TalentPage({
     data: { user },
   } = await supabase.auth.getUser();
   const candidates = user ? await getOpenCandidates(q, min) : [];
+  const skillSummary = await getVerifiedSkillSummaries(candidates.map((c) => c.id));
 
   return (
     <>
@@ -97,12 +99,18 @@ export default async function TalentPage({
                         )}
                         <ReliabilityBadge score={c.reliability_score} />
                       </div>
-                      <div className="mt-2">
+                      <div className="mt-2 space-y-1.5">
                         <RehireSignal
                           refCount={c.reference_count}
                           rehireCount={c.would_rehire_count}
                           noShowCount={c.no_show_count}
                         />
+                        {(() => {
+                          const sk = skillSummary.get(c.id);
+                          return sk ? (
+                            <VerifiedSkills count={sk.count} badges={sk.badges} />
+                          ) : null;
+                        })()}
                       </div>
                       {c.skills.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">

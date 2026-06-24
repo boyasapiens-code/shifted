@@ -50,6 +50,20 @@ export default async function CandidateDashboard({
     .eq("author_id", user.id);
   const reviewedEng = new Map((myReviews ?? []).map((r) => [r.engagement_id, r.rating]));
 
+  // Employer-verified skill badges.
+  const { data: verifiedSkills } = await supabase
+    .from("worker_skills")
+    .select("skill:skills(badge_name)")
+    .eq("worker_id", user.id)
+    .eq("status", "employer_verified");
+  const skillBadges = (verifiedSkills ?? [])
+    .map((r) => {
+      const s = Array.isArray(r.skill) ? r.skill[0] : r.skill;
+      return s?.badge_name;
+    })
+    .filter(Boolean) as string[];
+  const verifiedSkillCount = verifiedSkills?.length ?? 0;
+
   // Lightweight profile completeness signal.
   const checks = [
     !!profile.full_name,
@@ -129,6 +143,28 @@ export default async function CandidateDashboard({
                 </div>
                 <ButtonLink href="/candidate/verification" size="sm" className="mt-3 w-full">
                   {(candidate?.verification_level ?? 0) >= 4 ? "View verification" : "Get verified →"}
+                </ButtonLink>
+              </div>
+
+              {/* Skills & badges */}
+              <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-ink">Skills &amp; badges</span>
+                  <span className="text-xs text-stone-500">
+                    {verifiedSkillCount} verified
+                  </span>
+                </div>
+                {skillBadges.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {skillBadges.slice(0, 4).map((b) => (
+                      <span key={b} className="rounded-full bg-signal/10 px-2 py-0.5 text-xs font-semibold text-signal">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <ButtonLink href="/candidate/skills" size="sm" className="mt-3 w-full">
+                  {verifiedSkillCount > 0 ? "View skills" : "Build your skills →"}
                 </ButtonLink>
               </div>
 

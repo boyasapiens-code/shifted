@@ -83,6 +83,32 @@ export async function getOpenCandidates(
   }
 }
 
+/** Verified-skill summary (count + badge names) for a set of workers. */
+export async function getVerifiedSkillSummaries(
+  workerIds: string[],
+): Promise<Map<string, { count: number; badges: string[] }>> {
+  const map = new Map<string, { count: number; badges: string[] }>();
+  if (!workerIds.length) return map;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("worker_skills")
+      .select("worker_id, skill:skills(badge_name)")
+      .eq("status", "employer_verified")
+      .in("worker_id", workerIds);
+    for (const r of data ?? []) {
+      const cur = map.get(r.worker_id) ?? { count: 0, badges: [] };
+      cur.count += 1;
+      const sk = Array.isArray(r.skill) ? r.skill[0] : r.skill;
+      if (sk?.badge_name) cur.badges.push(sk.badge_name);
+      map.set(r.worker_id, cur);
+    }
+  } catch {
+    // best-effort
+  }
+  return map;
+}
+
 /** Single job with its employer. */
 export async function getJob(id: string): Promise<JobWithEmployer | null> {
   try {

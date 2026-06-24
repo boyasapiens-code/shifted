@@ -7,13 +7,17 @@ import { RatingStars, ReliabilityBadge } from "@/components/Rating";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ReferenceForm } from "@/components/ReferenceForm";
 import { requireEmployer } from "@/lib/auth";
+import { SkillChip } from "@/components/SkillChip";
 import {
   setEngagementAttendance,
   completeEngagement,
   reviewWorker,
   submitReference,
+  verifyWorkerSkill,
+  unverifyWorkerSkill,
 } from "../actions";
 import { messageWorker } from "@/app/messages/actions";
+import type { Skill } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Engagements" };
 
@@ -50,6 +54,42 @@ export default async function EngagementsPage() {
     .eq("employer_id", user.id);
   const referenced = new Set((myRefs ?? []).map((r) => r.engagement_id));
 
+  // Skill stacks for the roles in these engagements + each worker's status.
+  const roleKeys = [
+    ...new Set((engagements ?? []).map((e) => (e.role_title ?? "").toLowerCase()).filter(Boolean)),
+  ];
+  const skillsByRole = new Map<string, Skill[]>();
+  if (roleKeys.length) {
+    const { data: skills } = await supabase
+      .from("skills")
+      .select("*")
+      .in("role", roleKeys)
+      .order("tier", { ascending: true })
+      .order("sort", { ascending: true })
+      .returns<Skill[]>();
+    for (const s of skills ?? []) {
+      const list = skillsByRole.get(s.role) ?? [];
+      list.push(s);
+      skillsByRole.set(s.role, list);
+    }
+  }
+  const workerIds = [
+    ...new Set(
+      (engagements ?? []).map((e) => {
+        const w = Array.isArray(e.worker) ? e.worker[0] : e.worker;
+        return w?.id;
+      }).filter(Boolean) as string[],
+    ),
+  ];
+  const skillStatus = new Map<string, string>(); // `${workerId}:${skillId}` -> status
+  if (workerIds.length) {
+    const { data: ws } = await supabase
+      .from("worker_skills")
+      .select("worker_id, skill_id, status")
+      .in("worker_id", workerIds);
+    for (const r of ws ?? []) skillStatus.set(`${r.worker_id}:${r.skill_id}`, r.status);
+  }
+
   return (
     <>
       <SiteHeader />
@@ -69,6 +109,7 @@ export default async function EngagementsPage() {
               {engagements.map((e) => {
                 const w = Array.isArray(e.worker) ? e.worker[0] : e.worker;
                 const myRating = reviewed.get(e.id);
+                const roleSkills = skillsByRole.get((e.role_title ?? "").toLowerCase()) ?? [];
                 return (
                   <li key={e.id} className="rounded-[var(--radius-base)] border border-stone-200 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -116,6 +157,45 @@ export default async function EngagementsPage() {
                         </form>
                       )}
                     </div>
+
+                    {/* One-tap skill verification (the linchpin) */}
+                    {e.status === "completed" && w && roleSkills.length > 0 && (
+                      <div className="mt-4 border-t border-stone-100 pt-4">
+                        <p className="text-sm font-medium text-ink">
+                          Verify {w.full_name}&apos;s skills
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          One tap each — your endorsement becomes a portable badge.
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {roleSkills.map((s) => {
+                            const verified =
+                              skillStatus.get(`${w.id}:${s.id}`) === "employer_verified";
+                            return verified ? (
+                              <form key={s.id} action={unverifyWorkerSkill.bind(null, w.id, s.id)}>
+                                <button title="Tap to remove" type="submit">
+                                  <SkillChip name={s.name} status="employer_verified" isGate={s.is_gate} />
+                                </button>
+                              </form>
+                            ) : (
+                              <form key={s.id} action={verifyWorkerSkill.bind(null, e.id, w.id, s.id)}>
+                                <button
+                                  type="submit"
+                                  className="inline-flex items-center gap-1 rounded-full border border-dashed border-stone-300 px-2.5 py-0.5 text-xs font-medium text-stone-500 transition-colors hover:border-signal hover:text-signal"
+                                >
+                                  + {s.name}
+                                  {s.is_gate && (
+                                    <span className="rounded-sm bg-warning/20 px-1 text-[10px] font-semibold text-[#9a6b00]">
+                                      GATE
+                                    </span>
+                                  )}
+                                </button>
+                              </form>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {e.status === "completed" && (
                       <div className="mt-4 border-t border-stone-100 pt-4">

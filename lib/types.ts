@@ -182,6 +182,29 @@ export interface Review {
   updated_at: string;
 }
 
+export type SkillStatus = "self_declared" | "platform_verified" | "employer_verified";
+
+export interface Skill {
+  id: string;
+  role: string;
+  tier: number;
+  name: string;
+  slug: string;
+  badge_name: string | null;
+  is_gate: boolean;
+  sort: number;
+}
+
+export interface WorkerSkill {
+  id: string;
+  worker_id: string;
+  skill_id: string;
+  status: SkillStatus;
+  verified_by: string | null;
+  engagement_id: string | null;
+  verified_at: string | null;
+}
+
 export interface Conversation {
   id: string;
   employer_id: string;
