@@ -10,6 +10,7 @@ import { ReviewForm } from "@/components/ReviewForm";
 import { requireWorker } from "@/lib/auth";
 import { APPLICATION_STATUS_LABEL } from "@/lib/constants";
 import { reviewEmployer } from "./actions";
+import { messageEmployer } from "@/app/messages/actions";
 
 export const metadata: Metadata = { title: "Your dashboard" };
 
@@ -30,7 +31,7 @@ export default async function CandidateDashboard({
   const { data: applications } = await supabase
     .from("applications")
     .select(
-      "id, status, created_at, job:jobs(id, title, employer:employer_profiles(company_name, verification))",
+      "id, status, created_at, job:jobs(id, title, employer:employer_profiles(id, company_name, verification))",
     )
     .eq("candidate_id", user.id)
     .order("created_at", { ascending: false });
@@ -179,11 +180,20 @@ export default async function CandidateDashboard({
                             )}
                           </p>
                         </div>
-                        <Badge>
-                          {APPLICATION_STATUS_LABEL[
-                            app.status as keyof typeof APPLICATION_STATUS_LABEL
-                          ] ?? app.status}
-                        </Badge>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge>
+                            {APPLICATION_STATUS_LABEL[
+                              app.status as keyof typeof APPLICATION_STATUS_LABEL
+                            ] ?? app.status}
+                          </Badge>
+                          {employer && (
+                            <form action={messageEmployer.bind(null, employer.id, job?.id)}>
+                              <button className="text-xs font-medium text-ink underline">
+                                Message
+                              </button>
+                            </form>
+                          )}
+                        </div>
                       </li>
                     );
                   })}
@@ -222,7 +232,16 @@ export default async function CandidateDashboard({
                           </p>
                           <p className="text-sm text-stone-500">{e.role_title ?? "Role"}</p>
                         </div>
-                        <Badge tone={e.status === "completed" ? "green" : "default"}>{e.status}</Badge>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge tone={e.status === "completed" ? "green" : "default"}>{e.status}</Badge>
+                          {emp && (
+                            <form action={messageEmployer.bind(null, emp.id, undefined)}>
+                              <button className="text-xs font-medium text-ink underline">
+                                Message
+                              </button>
+                            </form>
+                          )}
+                        </div>
                       </div>
 
                       {e.status === "completed" && (

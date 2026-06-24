@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants";
 import type { ApplicationStatus, EmploymentType } from "@/lib/types";
 import { setApplicationStatus, setJobStatus, startEngagement } from "../../actions";
+import { messageWorker } from "@/app/messages/actions";
 
 export const metadata: Metadata = { title: "Manage job" };
 
@@ -163,11 +164,18 @@ export default async function ManageJobPage({
                           <button className={buttonClass("outline", "sm")}>Save</button>
                         </form>
                         {c && (
-                          <form action={startEngagement.bind(null, job.id, c.id)}>
-                            <button className={buttonClass("ghost", "sm")}>
-                              Hire · start engagement →
-                            </button>
-                          </form>
+                          <div className="flex gap-2">
+                            <form action={messageWorker.bind(null, c.id, job.id)}>
+                              <button className={buttonClass("outline", "sm")}>
+                                Message
+                              </button>
+                            </form>
+                            <form action={startEngagement.bind(null, job.id, c.id)}>
+                              <button className={buttonClass("ghost", "sm")}>
+                                Hire →
+                              </button>
+                            </form>
+                          </div>
                         )}
                       </div>
                     </div>

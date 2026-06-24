@@ -13,6 +13,7 @@ import {
   reviewWorker,
   submitReference,
 } from "../actions";
+import { messageWorker } from "@/app/messages/actions";
 
 export const metadata: Metadata = { title: "Engagements" };
 
@@ -107,6 +108,11 @@ export default async function EngagementsPage() {
                       {e.status === "active" && (
                         <form action={completeEngagement.bind(null, e.id)}>
                           <button className={buttonClass("primary", "sm")}>Mark completed</button>
+                        </form>
+                      )}
+                      {w && (
+                        <form action={messageWorker.bind(null, w.id, undefined)}>
+                          <button className={buttonClass("outline", "sm")}>Message</button>
                         </form>
                       )}
                     </div>

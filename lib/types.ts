@@ -177,6 +177,26 @@ export interface Review {
   updated_at: string;
 }
 
+export interface Conversation {
+  id: string;
+  employer_id: string;
+  worker_id: string;
+  job_id: string | null;
+  last_message_at: string;
+  employer_last_read_at: string | null;
+  worker_last_read_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+
 export interface Staff {
   id: string;
   employer_id: string;

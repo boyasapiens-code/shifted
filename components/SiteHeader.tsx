@@ -13,6 +13,7 @@ export async function SiteHeader() {
   let hasWorker = false;
   let hasEmployer = false;
   let isAdmin = false;
+  let hasUnread = false;
   let activeView: "worker" | "employer" | null = null;
   try {
     const account = await getAccount();
@@ -21,6 +22,17 @@ export async function SiteHeader() {
     hasEmployer = account.hasEmployer;
     isAdmin = account.profile?.is_admin ?? false;
     activeView = account.activeView;
+
+    if (user) {
+      const { data: convos } = await account.supabase
+        .from("conversations")
+        .select("employer_id, worker_id, last_message_at, employer_last_read_at, worker_last_read_at");
+      hasUnread = (convos ?? []).some((c) => {
+        const lastRead =
+          c.employer_id === user!.id ? c.employer_last_read_at : c.worker_last_read_at;
+        return !lastRead || c.last_message_at > lastRead;
+      });
+    }
   } catch {
     // No backend configured / network error — render signed-out nav.
   }
@@ -64,6 +76,15 @@ export async function SiteHeader() {
                   <ViewToggle activeView={activeView} />
                 </div>
               )}
+              <Link
+                href="/messages"
+                className="relative hidden text-sm text-stone-600 hover:text-ink sm:inline"
+              >
+                Messages
+                {hasUnread && (
+                  <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-signal" />
+                )}
+              </Link>
               <ButtonLink href={dashboardHref} variant="ghost" size="sm">
                 Dashboard
               </ButtonLink>
