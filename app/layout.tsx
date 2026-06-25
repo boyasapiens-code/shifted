@@ -23,11 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Satoshi — the SHIFTED brand typeface (Fontshare) */}
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
+        {/* Plus Jakarta Sans — the SHIFTED "Daybreak" brand typeface */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         />
       </head>
       <body className="min-h-dvh antialiased">{children}</body>

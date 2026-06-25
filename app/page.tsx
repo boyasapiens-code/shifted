@@ -34,14 +34,12 @@ export default async function HomePage({
             <div>
               <p className="eyebrow flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-signal" />
-                The right shift can change everything
+                A new generation of job platform
               </p>
               <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-tightest sm:text-6xl">
-                Better jobs.
+                Your next chapter
                 <br />
-                Better people.
-                <br />
-                Better workplaces.
+                starts here. <span className="text-signal">↗</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-stone-600">
                 SHIFTED is the vetted talent network for Hospitality, Retail &amp;

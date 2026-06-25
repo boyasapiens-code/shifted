@@ -56,7 +56,7 @@ export function SiteFooter() {
           <Logo />
           <p className="mt-3 text-sm text-stone-500">
             The vetted talent network for Hospitality, Retail &amp; Lifestyle.
-            The right shift can change everything.
+            Your next chapter starts here.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-x-10 gap-y-8 text-sm sm:grid-cols-4">

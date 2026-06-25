@@ -1,60 +1,62 @@
 @import "tailwindcss";
 
 /*
-  SHIFTED design system — aligned to the official Brand Guidelines.
-  Minimal, editorial, black-and-white with a single electric-blue accent.
-  Typeface: Satoshi. "The right shift can change everything."
+  SHIFTED design system — "Daybreak".
+  Warm, human, optimistic, credible: coral + cream for hope, deep aubergine for
+  trust. Typeface: Plus Jakarta Sans. "Your next chapter starts here. ↗"
 
-  Neutral scale is mapped onto the brand's grays so existing `stone-*`
-  utilities resolve to brand values:
-    stone-50  #FAFAFA   stone-300 #D9D9D9 (Light)
-    stone-100 #F2F2F2   stone-400 #999999
-    stone-200 #E6E6E6   stone-500 #666666
-                        stone-600 #333333
-                        stone-700 #1A1A1A
+  The warm neutral scale is mapped onto `stone-*` and the coral accent onto
+  `signal`, so existing utilities (`text-signal`, `bg-stone-50`, `text-ink`…)
+  adopt the new brand without per-file rewrites. Page bg = cream; cards = paper
+  (white).
 */
 
 @theme {
-  /* Primary */
-  --color-ink: #111111; /* Ink Black */
-  --color-paper: #ffffff; /* White */
+  /* Daybreak — warm, human, optimistic, credible. */
+  --color-ink: #2b1b2e; /* deep aubergine — text & dark surfaces */
+  --color-paper: #ffffff; /* white — cards & surfaces */
+  --color-cream: #fff6ec; /* warm page background */
 
-  /* Neutral scale (brand grays) */
-  --color-stone-50: #fafafa;
-  --color-stone-100: #f2f2f2; /* Soft Gray */
-  --color-stone-200: #e6e6e6; /* Light Gray */
-  --color-stone-300: #d9d9d9;
-  --color-stone-400: #999999;
-  --color-stone-500: #666666;
-  --color-stone-600: #333333;
-  --color-stone-700: #1a1a1a; /* Dark Gray */
+  /* Warm neutral scale (mapped onto stone-* so existing utilities adopt it) */
+  --color-stone-50: #fbf3e8;
+  --color-stone-100: #f4ebdd;
+  --color-stone-200: #efe2d2; /* line / divider */
+  --color-stone-300: #e2d2bd;
+  --color-stone-400: #bfa794;
+  --color-stone-500: #9a7a6e; /* muted text */
+  --color-stone-600: #6b554b;
+  --color-stone-700: #3a2b30;
 
-  /* Secondary / status */
-  --color-signal: #1166e4; /* Electric Blue — primary accent */
-  --color-signal-bright: #0a84ff; /* gradient start */
-  --color-success: #22c55e; /* Green */
-  --color-warning: #ffb300; /* Amber */
-  --color-danger: #ff3b30; /* Red */
+  /* Brand accent + status */
+  --color-signal: #ff6b4a; /* Coral — primary CTA / accent */
+  --color-signal-bright: #ff8a6a;
+  --color-coral-deep: #e85636; /* hover / pressed */
+  --color-amber: #ffb23e; /* boost / highlight */
+  --color-peach: #ffe0b0;
+  --color-peach-soft: #ffefd9;
+  --color-success: #2fa36b; /* verified / hired */
+  --color-warning: #ffb23e; /* boost / amber */
+  --color-danger: #e8553c; /* warm red */
 
-  /* Typography — Satoshi (loaded via Fontshare in layout) */
+  /* Typography — Plus Jakarta Sans (loaded in layout) */
   --font-sans:
-    "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Satoshi", var(--font-sans);
+    "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
 
-  /* Radius scale: 2 / 4 / 8 / 12 / 16 / 24 / 32 */
-  --radius-base: 0.5rem; /* 8px */
-  --radius-card: 0.875rem; /* 14px — cards */
+  /* Radius — softer Daybreak scale */
+  --radius-base: 0.75rem; /* 12px — inputs, small cards */
+  --radius-card: 1rem; /* 16px — cards */
 
   --tracking-tightest: -0.04em;
 
-  /* Subtle elevation — used sparingly on interactive surfaces */
-  --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04), 0 1px 3px rgba(17, 17, 17, 0.05);
-  --shadow-md: 0 6px 16px -4px rgba(17, 17, 17, 0.08), 0 2px 6px -2px rgba(17, 17, 17, 0.05);
-  --shadow-lg: 0 18px 40px -12px rgba(17, 17, 17, 0.16);
+  /* Soft, purple-tinted elevation */
+  --shadow-sm: 0 1px 2px rgba(43, 27, 46, 0.05), 0 1px 3px rgba(43, 27, 46, 0.05);
+  --shadow-md: 0 8px 30px rgba(43, 27, 46, 0.07);
+  --shadow-lg: 0 18px 40px -12px rgba(43, 27, 46, 0.14);
 
   /* Brand gradients */
-  --gradient-ink: linear-gradient(135deg, #000000, #1a1a1a);
-  --gradient-blue: linear-gradient(135deg, #0a84ff, #1166e4);
+  --gradient-ink: linear-gradient(135deg, #2b1b2e, #3a2b30);
+  --gradient-blue: linear-gradient(135deg, #ff8a6a, #ff6b4a);
 }
 
 @layer base {
@@ -64,14 +66,14 @@
   }
 
   body {
-    background-color: var(--color-paper);
+    background-color: var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-sans);
   }
 
   ::selection {
-    background-color: var(--color-ink);
-    color: var(--color-paper);
+    background-color: var(--color-peach);
+    color: var(--color-ink);
   }
 
   h1,
@@ -80,6 +82,9 @@
     font-family: var(--font-display);
     letter-spacing: var(--tracking-tightest);
     font-weight: 700;
+  }
+  h1 {
+    font-weight: 800;
   }
 }
 

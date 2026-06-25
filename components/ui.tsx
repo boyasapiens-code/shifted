@@ -55,11 +55,11 @@ type ButtonVariant = "primary" | "outline" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-base)] font-medium transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2";
+  "inline-flex items-center justify-center gap-2 rounded-full font-bold transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-ink text-paper shadow-[var(--shadow-sm)] hover:bg-stone-700",
-  outline: "border border-stone-300 text-ink hover:border-ink hover:bg-stone-50",
+  primary: "bg-signal text-paper shadow-[var(--shadow-sm)] hover:brightness-95",
+  outline: "border-[1.5px] border-ink text-ink hover:bg-ink hover:text-paper",
   ghost: "text-ink hover:bg-stone-100",
 };
 
@@ -111,7 +111,7 @@ export function ButtonLink({
 // Form fields
 // ---------------------------------------------------------------------------
 const fieldBase =
-  "w-full rounded-[var(--radius-base)] border border-stone-300 bg-paper px-3.5 text-ink placeholder:text-stone-400 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink";
+  "w-full rounded-[var(--radius-base)] border-[1.5px] border-stone-200 bg-paper px-3.5 text-ink placeholder:text-stone-400 focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/25";
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn(fieldBase, "h-11", props.className)} />;

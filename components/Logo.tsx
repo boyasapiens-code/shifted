@@ -2,52 +2,52 @@ import Link from "next/link";
 import { cn } from "./ui";
 
 /**
- * SHIFTED brand mark — a bold geometric "S" monogram with angular, dynamic
- * strokes that nod to a "shift" in motion. Uses currentColor so it inverts
- * cleanly on dark backgrounds.
+ * App icon / mark — coral "s↗" tile (the rising shift). Uses brand coral
+ * regardless of context.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      className={cn("h-7 w-7", className)}
-      role="img"
+    <span
       aria-label="SHIFTED"
+      role="img"
+      className={cn(
+        "inline-flex h-7 w-7 items-center justify-center rounded-[10px] bg-signal text-paper text-sm font-extrabold leading-none",
+        className,
+      )}
     >
-      <path
-        d="M50 13 L21 13 L21 30 L43 34 L43 51 L14 51"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="11"
-        strokeLinejoin="miter"
-        strokeLinecap="butt"
-        transform="skewX(-7) translate(4 0)"
-      />
-    </svg>
+      s↗
+    </span>
   );
 }
 
 /**
- * Full lockup: mark + SHIFTED wordmark.
+ * Wordmark lockup — lowercase `shifted ↗` with the rising arrow; the "ed" and
+ * arrow carry the coral. `onDark` keeps the base letters white on dark surfaces.
  */
 export function Logo({
   className,
   href = "/",
   showWordmark = true,
+  onDark = false,
 }: {
   className?: string;
   href?: string;
   showWordmark?: boolean;
+  onDark?: boolean;
 }) {
   return (
     <Link
       href={href}
       aria-label="SHIFTED home"
-      className={cn("inline-flex items-center gap-2 text-ink", className)}
+      className={cn("inline-flex items-center gap-2", onDark ? "text-paper" : "text-ink", className)}
     >
-      <LogoMark className="h-7 w-7" />
-      {showWordmark && (
-        <span className="text-lg font-black tracking-[0.06em]">SHIFTED</span>
+      {showWordmark ? (
+        <span className="text-xl font-extrabold tracking-[-0.04em]">
+          shift<span className="text-signal">ed</span>
+          <span className="text-signal"> ↗</span>
+        </span>
+      ) : (
+        <LogoMark />
       )}
     </Link>
   );
