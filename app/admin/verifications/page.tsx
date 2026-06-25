@@ -95,6 +95,9 @@ export default async function AdminVerificationsPage() {
               <a href="/admin/moderation" className="text-sm font-medium text-signal hover:underline">
                 Moderation →
               </a>
+              <a href="/admin/questions" className="text-sm font-medium text-signal hover:underline">
+                Questions →
+              </a>
               <a href="/admin/data-requests" className="text-sm font-medium text-signal hover:underline">
                 Data requests →
               </a>

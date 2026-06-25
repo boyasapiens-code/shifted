@@ -50,6 +50,23 @@ export async function resolveDataRequest(id: string, status: string) {
   revalidatePath("/admin/data-requests");
 }
 
+/** Admin approves an employer-suggested question into the global bank. */
+export async function approveQuestion(id: string) {
+  const { supabase } = await requireAdminUser();
+  await supabase
+    .from("questions")
+    .update({ status: "active", is_global: true })
+    .eq("id", id);
+  revalidatePath("/admin/questions");
+}
+
+/** Admin rejects a suggested question. */
+export async function rejectQuestion(id: string) {
+  const { supabase } = await requireAdminUser();
+  await supabase.from("questions").update({ status: "rejected" }).eq("id", id);
+  revalidatePath("/admin/questions");
+}
+
 /** Ops test console — classify arbitrary content (logged as a 'console' decision). */
 export async function runConsole(formData: FormData) {
   const { supabase, user } = await requireAdminUser();

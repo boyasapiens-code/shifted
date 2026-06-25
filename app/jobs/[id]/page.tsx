@@ -6,7 +6,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { ComplianceBadge } from "@/components/ComplianceBadge";
 import { ReportButton } from "@/components/ReportButton";
+import { QuestionField } from "@/components/Interview";
 import { complianceStatus } from "@/lib/compliance";
+import type { Question } from "@/lib/interview";
 import { RatingSummary } from "@/components/Rating";
 import { Badge, ButtonLink, Container, Textarea, buttonClass } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
@@ -118,6 +120,21 @@ export default async function JobDetailPage({
         headcount10Plus: employerMedia.compliance_headcount_10plus ?? false,
       })
     : "none";
+
+  // Closed-bank screening questions for this job (if the employer attached a set).
+  const { data: qset } = await supabase
+    .from("question_sets")
+    .select("*")
+    .eq("job_id", job.id)
+    .maybeSingle();
+  let setQuestions: Question[] = [];
+  if (qset?.question_ids?.length) {
+    const { data: qs } = await supabase.from("questions").select("*").in("id", qset.question_ids);
+    const byId = new Map(((qs ?? []) as Question[]).map((q) => [q.id, q] as const));
+    setQuestions = (qset.question_ids as string[])
+      .map((id) => byId.get(id))
+      .filter((q): q is Question => !!q);
+  }
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
   const applyAction = applyToJob.bind(null, job.id);
@@ -289,6 +306,21 @@ export default async function JobDetailPage({
 
                 {user && role === "candidate" && !existingStatus && (
                   <form action={applyAction} className="space-y-3">
+                    {setQuestions.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-medium text-stone-500">
+                          A few quick questions from the employer:
+                        </p>
+                        {setQuestions.map((q, i) => (
+                          <QuestionField
+                            key={q.id}
+                            q={q}
+                            index={i + 1}
+                            required={qset!.required_ids.includes(q.id)}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <Textarea
                       name="cover_note"
                       placeholder="Add a short note (optional) — why you're a fit."
@@ -298,7 +330,7 @@ export default async function JobDetailPage({
                       type="submit"
                       className={buttonClass("primary", "lg", "w-full")}
                     >
-                      One-click apply
+                      {setQuestions.length > 0 ? "Submit application" : "One-click apply"}
                     </button>
                   </form>
                 )}

@@ -29,6 +29,23 @@ const PIPELINE: ApplicationStatus[] = [
   "rejected",
 ];
 
+/** Human label for a stored answer value. */
+function labelFor(
+  q: { answer_format?: string; options?: unknown } | null,
+  value: string,
+): string {
+  if (!q) return value;
+  if (q.answer_format === "scale") {
+    const max = (q.options as { max?: number } | null)?.max ?? 5;
+    return `${value} / ${max}`;
+  }
+  if (q.answer_format === "short_structured") return value;
+  const opt = Array.isArray(q.options)
+    ? (q.options as { value: string; label: string }[]).find((o) => o.value === value)
+    : null;
+  return opt?.label ?? value;
+}
+
 export default async function ManageJobPage({
   params,
 }: {
@@ -45,13 +62,45 @@ export default async function ManageJobPage({
     .single();
   if (!job) notFound();
 
-  const { data: applications } = await supabase
+  const { data: applicationsRaw } = await supabase
     .from("applications")
     .select(
-      "id, status, cover_note, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work, verification_level, reference_count, would_rehire_count, no_show_count)",
+      "id, status, cover_note, score, knocked_out, created_at, candidate:candidate_profiles(id, full_name, headline, location, skills, languages, years_experience, open_to_work, verification_level, reference_count, would_rehire_count, no_show_count)",
     )
     .eq("job_id", id)
     .order("created_at", { ascending: false });
+
+  // Screening question set + applicant answers.
+  const { data: qset } = await supabase
+    .from("question_sets")
+    .select("scoring_mode")
+    .eq("job_id", id)
+    .maybeSingle();
+
+  const appIds = (applicationsRaw ?? []).map((a) => a.id);
+  const answersByApp: Record<string, { prompt: string; label: string }[]> = {};
+  if (appIds.length) {
+    const { data: ans } = await supabase
+      .from("answers")
+      .select("application_id, value, question:questions(prompt, answer_format, options)")
+      .in("application_id", appIds);
+    for (const a of ans ?? []) {
+      const q = Array.isArray(a.question) ? a.question[0] : a.question;
+      (answersByApp[a.application_id] ??= []).push({
+        prompt: q?.prompt ?? "",
+        label: labelFor(q, a.value as string),
+      });
+    }
+  }
+
+  // Rank by score when the employer chose "score & rank" (knocked-out last).
+  let applications = applicationsRaw ?? [];
+  if (qset?.scoring_mode === "rank") {
+    applications = [...applications].sort((a, b) => {
+      if (!!a.knocked_out !== !!b.knocked_out) return a.knocked_out ? 1 : -1;
+      return (b.score ?? -1) - (a.score ?? -1);
+    });
+  }
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
 
@@ -100,6 +149,9 @@ export default async function ManageJobPage({
                     </button>
                   </form>
                 ))}
+              <Link href={`/employer/jobs/${job.id}/questions`} className={buttonClass("outline", "sm")}>
+                {qset ? "Edit questions" : "Add screening questions"}
+              </Link>
             </div>
           </div>
 
@@ -124,6 +176,12 @@ export default async function ManageJobPage({
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-ink">{name}</p>
                           <VerificationBadge level={c?.verification_level ?? 0} />
+                          {typeof app.score === "number" && (
+                            <Badge tone={app.score >= 70 ? "green" : app.score >= 40 ? "amber" : "default"}>
+                              {app.score}% match
+                            </Badge>
+                          )}
+                          {app.knocked_out && <Badge tone="red">Screened out</Badge>}
                           {c?.open_to_work && <Badge>Open to work</Badge>}
                         </div>
                         <p className="text-sm text-stone-500">
@@ -148,6 +206,22 @@ export default async function ManageJobPage({
                               noShowCount={c.no_show_count ?? 0}
                             />
                           </div>
+                        )}
+                        {answersByApp[app.id]?.length > 0 && (
+                          <details className="mt-3">
+                            <summary className="cursor-pointer text-sm font-medium text-stone-600">
+                              Screening answers ({answersByApp[app.id].length})
+                            </summary>
+                            <ul className="mt-2 space-y-1.5">
+                              {answersByApp[app.id].map((a, i) => (
+                                <li key={i} className="text-sm">
+                                  <span className="text-stone-500">{a.prompt}</span>
+                                  <br />
+                                  <span className="font-medium text-ink">{a.label}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
                         )}
                         {app.cover_note && (
                           <p className="mt-3 border-l-2 border-stone-200 pl-3 text-sm text-stone-600">
