@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { ComplianceBadge } from "@/components/ComplianceBadge";
+import { ReportButton } from "@/components/ReportButton";
 import { complianceStatus } from "@/lib/compliance";
 import { RatingSummary } from "@/components/Rating";
 import { Badge, ButtonLink, Container, Textarea, buttonClass } from "@/components/ui";
@@ -173,6 +174,10 @@ export default async function JobDetailPage({
             <article className="mt-8 whitespace-pre-wrap text-[15px] leading-relaxed text-stone-700">
               {job.description || "No description provided."}
             </article>
+
+            <div className="relative mt-4">
+              <ReportButton contentType="job_post" contentRef={id} returnTo={`/jobs/${id}`} />
+            </div>
 
             {job.languages_required.length > 0 && (
               <div className="mt-8">

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { moderateComment } from "@/lib/moderation";
 
 function toList(value: FormDataEntryValue | null): string[] {
   return String(value ?? "")
@@ -54,6 +55,11 @@ export async function reviewEmployer(
   if (!user) redirect("/login?next=/candidate");
 
   const rating = Math.max(1, Math.min(5, Number(formData.get("rating") ?? 0)));
+  const mod = await moderateComment(
+    String(formData.get("comment") ?? ""),
+    { contentType: "review", authorId: user.id, targetId: employerId },
+    supabase,
+  );
   await supabase.from("reviews").upsert(
     {
       engagement_id: engagementId,
@@ -61,9 +67,11 @@ export async function reviewEmployer(
       subject_id: employerId,
       kind: "of_employer",
       rating,
-      comment: String(formData.get("comment") ?? "").trim() || null,
+      comment: mod.comment,
+      comment_status: mod.status,
     },
     { onConflict: "engagement_id,author_id" },
   );
   revalidatePath("/candidate");
+  if (mod.action !== "ALLOW") redirect(`/candidate?moderation=${mod.action.toLowerCase()}`);
 }

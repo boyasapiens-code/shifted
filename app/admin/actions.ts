@@ -26,6 +26,40 @@ export async function updateMarketingLeadStatus(id: string, status: string) {
   revalidatePath("/admin/marketing");
 }
 
+/** Human confirms a held moderation decision (allow or block). */
+export async function reviewModeration(id: string, decision: "allowed" | "blocked") {
+  const { supabase, user } = await requireAdminUser();
+  await supabase
+    .from("moderation_decisions")
+    .update({ review_action: decision, reviewer_id: user.id, reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+  revalidatePath("/admin/moderation");
+}
+
+/** Admin resolves a content report. */
+export async function resolveReport(id: string, status: string) {
+  const { supabase } = await requireAdminUser();
+  await supabase.from("content_reports").update({ status }).eq("id", id);
+  revalidatePath("/admin/moderation");
+}
+
+/** Ops test console — classify arbitrary content (logged as a 'console' decision). */
+export async function runConsole(formData: FormData) {
+  const { supabase, user } = await requireAdminUser();
+  const text = String(formData.get("text") ?? "").trim();
+  const contentType = String(formData.get("content_type") ?? "review");
+  if (text) {
+    const { moderate } = await import("@/lib/moderation");
+    await moderate(
+      text,
+      { contentType: contentType as never, authorId: user.id },
+      supabase,
+    );
+  }
+  revalidatePath("/admin/moderation");
+  redirect("/admin/moderation#console");
+}
+
 export async function approveVerification(id: string) {
   const { supabase, user } = await requireAdminUser();
   await supabase

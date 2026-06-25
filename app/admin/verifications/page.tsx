@@ -91,9 +91,14 @@ export default async function AdminVerificationsPage() {
         <Container className="max-w-3xl py-12">
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">Admin · Reviewer</p>
-            <a href="/admin/marketing" className="text-sm font-medium text-signal hover:underline">
-              Marketing leads →
-            </a>
+            <span className="flex gap-4">
+              <a href="/admin/moderation" className="text-sm font-medium text-signal hover:underline">
+                Moderation →
+              </a>
+              <a href="/admin/marketing" className="text-sm font-medium text-signal hover:underline">
+                Marketing leads →
+              </a>
+            </span>
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             Verification queue

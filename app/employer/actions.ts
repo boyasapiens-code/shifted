@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus, EmploymentType, Industry } from "@/lib/types";
 import { OUTCOME_PRICING } from "@/lib/constants";
+import { moderateComment } from "@/lib/moderation";
 
 function toList(value: FormDataEntryValue | null): string[] {
   return String(value ?? "")
@@ -242,6 +243,12 @@ export async function reviewWorker(
 ) {
   const { supabase, user } = await requireEmployer();
   const rating = Math.max(1, Math.min(5, Number(formData.get("rating") ?? 0)));
+  // Moderate the free-text comment before it's stored (Thai-law + policy gates).
+  const mod = await moderateComment(
+    String(formData.get("comment") ?? ""),
+    { contentType: "review", authorId: user.id, targetId: workerId },
+    supabase,
+  );
   await supabase.from("reviews").upsert(
     {
       engagement_id: engagementId,
@@ -249,11 +256,13 @@ export async function reviewWorker(
       subject_id: workerId,
       kind: "of_worker",
       rating,
-      comment: String(formData.get("comment") ?? "").trim() || null,
+      comment: mod.comment,
+      comment_status: mod.status,
     },
     { onConflict: "engagement_id,author_id" },
   );
   revalidatePath("/employer/engagements");
+  if (mod.action !== "ALLOW") redirect(`/employer/engagements?moderation=${mod.action.toLowerCase()}`);
 }
 
 /** One-tap: endorse a worker's skill from a completed engagement (the linchpin). */
