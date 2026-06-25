@@ -19,6 +19,13 @@ async function requireAdminUser() {
   return { supabase, user };
 }
 
+/** Admin updates a Marketing Solutions lead's follow-up status. */
+export async function updateMarketingLeadStatus(id: string, status: string) {
+  const { supabase } = await requireAdminUser();
+  await supabase.from("marketing_leads").update({ status }).eq("id", id);
+  revalidatePath("/admin/marketing");
+}
+
 export async function approveVerification(id: string) {
   const { supabase, user } = await requireAdminUser();
   await supabase

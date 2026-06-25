@@ -114,6 +114,9 @@ export default async function EmployerDashboard({
               <ButtonLink href="/employer/trust-circle" variant="outline">
                 Trust Circle
               </ButtonLink>
+              <ButtonLink href="/marketing-solutions" variant="outline">
+                Marketing
+              </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
               </ButtonLink>
@@ -180,6 +183,20 @@ export default async function EmployerDashboard({
               </div>
             </div>
           )}
+
+          {/* Marketing cross-sell — Booyah */}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-base)] border border-stone-200 bg-ink p-5 text-paper">
+            <div>
+              <p className="font-medium">Get more customers, not just staff</p>
+              <p className="mt-1 text-sm text-stone-300">
+                Hiring is half the battle. Booyah gets customers finding you on
+                Google, Maps, and AI.
+              </p>
+            </div>
+            <ButtonLink href="/marketing-solutions" variant="primary" size="sm">
+              Explore Marketing Solutions
+            </ButtonLink>
+          </div>
 
           {/* Jobs */}
           <h2 className="mt-12 text-xl font-semibold tracking-tight">Your jobs</h2>
