@@ -111,6 +111,9 @@ export default async function EmployerDashboard({
               <ButtonLink href="/employer/compliance" variant="outline">
                 Compliance
               </ButtonLink>
+              <ButtonLink href="/employer/trust-circle" variant="outline">
+                Trust Circle
+              </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
               </ButtonLink>

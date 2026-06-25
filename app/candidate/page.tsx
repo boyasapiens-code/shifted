@@ -249,6 +249,23 @@ export default async function CandidateDashboard({
                 </ButtonLink>
               </div>
 
+              {/* Trust Circle */}
+              <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
+                <span className="text-sm font-medium text-ink">Trust Circle</span>
+                <p className="mt-1 text-xs text-stone-500">
+                  Control who can vouch for you, and see every time an employer
+                  views your data.
+                </p>
+                <ButtonLink
+                  href="/candidate/trust-circle"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                >
+                  Manage consent →
+                </ButtonLink>
+              </div>
+
               <ButtonLink
                 href="/candidate/profile"
                 variant="outline"
