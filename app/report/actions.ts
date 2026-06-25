@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/ratelimit";
 
 /** File a confidential content report (every post/review has a Report button). */
 export async function reportContent(formData: FormData) {
@@ -11,6 +12,10 @@ export async function reportContent(formData: FormData) {
   } = await supabase.auth.getUser();
   const returnTo = String(formData.get("return_to") ?? "/");
   if (!user) redirect(`/login?next=${returnTo}`);
+
+  // Throttle report spam: 10 per hour per user.
+  const ok = await rateLimit(supabase, `report:${user.id}`, 10, 3600);
+  if (!ok) redirect(`${returnTo}?reported=busy`);
 
   await supabase.from("content_reports").insert({
     reporter_id: user.id,

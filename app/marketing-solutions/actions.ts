@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 import type { InterestTier } from "@/lib/booyah";
 
 const TIERS: InterestTier[] = ["idol", "boss", "legend", "diy", "unsure"];
@@ -12,6 +13,10 @@ export async function submitMarketingLead(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Throttle spam from the public (logged-out) lead form: 5 per hour per IP.
+  const ok = await rateLimit(supabase, `lead:${user?.id ?? (await clientIp())}`, 5, 3600);
+  if (!ok) redirect("/marketing-solutions?error=busy#lead");
 
   const business_name = String(formData.get("business_name") ?? "").trim();
   if (!business_name) redirect("/marketing-solutions?error=missing#lead");

@@ -105,8 +105,11 @@ export default function LegalPage() {
               You may access, correct, export, or delete your data, object to or
               restrict processing, and withdraw consent at any time. You may also
               lodge a complaint with Thailand&apos;s Personal Data Protection
-              Committee (PDPC). To exercise any right, email{" "}
-              <span className="text-ink">privacy@{SITE_DOMAIN}</span>.
+              Committee (PDPC). Manage this yourself at{" "}
+              <a href="/account/privacy" className="text-signal hover:underline">
+                Your data
+              </a>
+              , or email <span className="text-ink">privacy@{SITE_DOMAIN}</span>.
             </p>
           </Section>
           <Section id="transfer" title="International transfer & cookies">

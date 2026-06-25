@@ -324,6 +324,11 @@ function LeadForm({
           Please add your business name.
         </p>
       )}
+      {error === "busy" && (
+        <p className="mt-2 rounded-[var(--radius-base)] bg-danger/10 px-3 py-2 text-sm text-danger">
+          Too many submissions — please try again in a little while.
+        </p>
+      )}
       <div className="mt-4 space-y-3">
         <div>
           <label className="text-sm font-medium text-ink">{t.formBusiness}</label>

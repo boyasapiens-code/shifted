@@ -43,6 +43,13 @@ export async function resolveReport(id: string, status: string) {
   revalidatePath("/admin/moderation");
 }
 
+/** Admin marks a PDPA data-subject request actioned. */
+export async function resolveDataRequest(id: string, status: string) {
+  const { supabase } = await requireAdminUser();
+  await supabase.from("data_requests").update({ status }).eq("id", id);
+  revalidatePath("/admin/data-requests");
+}
+
 /** Ops test console — classify arbitrary content (logged as a 'console' decision). */
 export async function runConsole(formData: FormData) {
   const { supabase, user } = await requireAdminUser();

@@ -43,6 +43,7 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
 
 const UTILITY: [string, string][] = [
   ["Privacy & Terms", "/legal"],
+  ["Your data", "/account/privacy"],
   ["Ad Choices", "/ad-choices"],
   ["Mobile", "/mobile"],
 ];
