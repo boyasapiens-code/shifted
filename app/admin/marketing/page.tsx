@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, buttonClass } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import type { MarketingLead, LeadStatus } from "@/lib/booyah";
+import type { MarketingLead, LeadStatus } from "@/lib/marketing";
 import { updateMarketingLeadStatus } from "../actions";
 
 export const metadata: Metadata = { title: "Marketing leads" };

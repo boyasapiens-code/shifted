@@ -7,10 +7,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
-  // The /rights pages read Markdown from content/ at request time — ensure those
-  // files are bundled into the serverless functions on Vercel.
+  // Pages that read Markdown from content/ at request time — ensure those files
+  // are bundled into the serverless functions on Vercel.
   outputFileTracingIncludes: {
     "/rights/**": ["./content/rights/**/*"],
+    "/marketing-solutions/**": ["./content/marketing/**/*"],
   },
 };
 

@@ -1,10 +1,13 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { RIGHTS_CATEGORIES, getAllRightsArticles } from "@/lib/rights";
+import { getAllIdeas, getAllSpotlights } from "@/lib/marketing-content";
 
 // Public, indexable routes only (authed areas are disallowed in robots.ts).
 const STATIC = [
-  "", "/jobs", "/talent", "/about", "/marketing-solutions",
+  "", "/jobs", "/talent", "/about",
+  "/marketing-solutions", "/marketing-solutions/ideas",
+  "/marketing-solutions/spotlights", "/marketing-solutions/solutions",
   "/community-guidelines", "/rights", "/legal", "/safety-center",
   "/talent-solutions", "/small-business", "/signup", "/login",
 ];
@@ -29,5 +32,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "monthly" as const,
   }));
 
-  return [...base, ...categories, ...articles];
+  const ideas = getAllIdeas().map((i) => ({
+    url: `${SITE_URL}/marketing-solutions/ideas/${i.slug}`,
+    lastModified: i.publishedAt ? new Date(i.publishedAt) : now,
+    changeFrequency: "monthly" as const,
+  }));
+
+  const spotlights = getAllSpotlights().map((s) => ({
+    url: `${SITE_URL}/marketing-solutions/spotlights/${s.slug}`,
+    lastModified: s.publishedAt ? new Date(s.publishedAt) : now,
+    changeFrequency: "monthly" as const,
+  }));
+
+  return [...base, ...categories, ...articles, ...ideas, ...spotlights];
 }
