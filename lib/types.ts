@@ -112,6 +112,10 @@ export interface EmployerProfile {
   prompts_responded: number;
   rating_avg: number | null;
   rating_count: number;
+  compliance_items: string[];
+  compliance_foreign_hires: boolean;
+  compliance_headcount_10plus: boolean;
+  compliance_attested_at: string | null;
   created_at: string;
   updated_at: string;
 }

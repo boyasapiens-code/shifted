@@ -5,8 +5,10 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, ButtonLink, Container, buttonClass } from "@/components/ui";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { VerificationBadge, VerificationLadder } from "@/components/VerificationBadge";
+import { ComplianceBadge } from "@/components/ComplianceBadge";
 import { RatingSummary } from "@/components/Rating";
 import { requireEmployer } from "@/lib/auth";
+import { complianceScore, complianceStatus } from "@/lib/compliance";
 import { INDUSTRY_LABEL, isBoosted, isPaidPlan, PLAN_NAME, BOOST_PRICE } from "@/lib/constants";
 import type { Industry, PlanTier } from "@/lib/types";
 import { boostJob } from "./billing/actions";
@@ -53,6 +55,14 @@ export default async function EmployerDashboard({
   const ratePct =
     employer?.response_rate == null ? null : Math.round(employer.response_rate * 100);
 
+  const complianceCtx = {
+    foreignHires: employer?.compliance_foreign_hires ?? false,
+    headcount10Plus: employer?.compliance_headcount_10plus ?? false,
+  };
+  const complianceItems = employer?.compliance_items ?? [];
+  const compScore = complianceScore(complianceItems, complianceCtx);
+  const compStatus = complianceStatus(complianceItems, complianceCtx);
+
   return (
     <>
       <SiteHeader />
@@ -98,6 +108,9 @@ export default async function EmployerDashboard({
               <ButtonLink href="/employer/billing" variant="outline">
                 {employer && isPaidPlan(employer.plan) ? "Billing" : "Plans"}
               </ButtonLink>
+              <ButtonLink href="/employer/compliance" variant="outline">
+                Compliance
+              </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
               </ButtonLink>
@@ -129,6 +142,38 @@ export default async function EmployerDashboard({
               </div>
               <div className="mt-3">
                 <VerificationLadder level={employer.verification_level} />
+              </div>
+            </div>
+          )}
+
+          {/* Hiring compliance */}
+          {employer && (
+            <div className="mt-4 rounded-[var(--radius-base)] border border-stone-200 bg-stone-50 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-ink">Hiring compliance</p>
+                    <ComplianceBadge status={compStatus} />
+                    {compStatus !== "ready" && (
+                      <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-600">
+                        {compScore.pct}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-stone-600">
+                    Work through Thailand&apos;s hiring document trail (RD, SSO,
+                    DLPW) and earn a Compliance-ready badge candidates can see.
+                  </p>
+                </div>
+                <ButtonLink href="/employer/compliance" variant="outline" size="sm">
+                  {compStatus === "ready" ? "View checklist" : "Get compliant →"}
+                </ButtonLink>
+              </div>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                <div
+                  className="h-full rounded-full bg-success"
+                  style={{ width: `${compScore.pct}%` }}
+                />
               </div>
             </div>
           )}

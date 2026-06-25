@@ -23,7 +23,8 @@
       "Bash(git push *)",
       "Bash(ls -la /Users/nisabo/Documents/Claude/Projects/Shifted/ 2>/dev/null; echo \"---CONTENT---\"; ls -R /Users/nisabo/Shifted/content/rights 2>/dev/null)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(grep -iE \"compan|talent|^app/c$\")"
     ]
   }
 }

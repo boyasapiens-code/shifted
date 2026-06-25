@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { VerificationBadge } from "@/components/VerificationBadge";
+import { ComplianceBadge } from "@/components/ComplianceBadge";
+import { complianceStatus } from "@/lib/compliance";
 import { RatingSummary } from "@/components/Rating";
 import { Badge, ButtonLink, Container, Textarea, buttonClass } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
@@ -104,9 +106,17 @@ export default async function JobDetailPage({
   // Employer workplace media + reputation (public).
   const { data: employerMedia } = await supabase
     .from("employer_profiles")
-    .select("photos, description, rating_avg, rating_count")
+    .select(
+      "photos, description, rating_avg, rating_count, compliance_items, compliance_foreign_hires, compliance_headcount_10plus",
+    )
     .eq("id", job.employer_id)
     .maybeSingle();
+  const employerComplianceStatus = employerMedia
+    ? complianceStatus(employerMedia.compliance_items ?? [], {
+        foreignHires: employerMedia.compliance_foreign_hires ?? false,
+        headcount10Plus: employerMedia.compliance_headcount_10plus ?? false,
+      })
+    : "none";
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
   const applyAction = applyToJob.bind(null, job.id);
@@ -137,6 +147,7 @@ export default async function JobDetailPage({
                 {job.employer && (
                   <VerificationBadge level={job.employer.verification_level} kind="employer" />
                 )}
+                <ComplianceBadge status={employerComplianceStatus} />
                 {employerMedia && (employerMedia.rating_count ?? 0) > 0 && (
                   <RatingSummary
                     avg={employerMedia.rating_avg}
