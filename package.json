@@ -12,7 +12,8 @@
     "seed:extract": "python3 scripts/extract.py",
     "seed": "node scripts/seed.mjs",
     "test:trust-circle": "node scripts/test-trust-circle.mjs",
-    "test:moderation": "node scripts/test-moderation.mjs"
+    "test:moderation": "node scripts/test-moderation.mjs",
+    "test:matching": "node scripts/test-matching.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

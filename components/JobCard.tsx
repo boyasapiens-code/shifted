@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { JobWithEmployer } from "@/lib/types";
+import type { MatchResult } from "@/lib/matching/types";
 import { EMPLOYMENT_TYPE_LABEL, INDUSTRY_LABEL, formatSalary, isBoosted } from "@/lib/constants";
 import { Badge } from "./ui";
 import { VerificationBadge } from "./VerificationBadge";
+import { MatchBadge } from "./MatchBadge";
 
-export function JobCard({ job }: { job: JobWithEmployer }) {
+export function JobCard({ job, match }: { job: JobWithEmployer; match?: MatchResult }) {
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
   return (
     <Link
@@ -43,6 +45,7 @@ export function JobCard({ job }: { job: JobWithEmployer }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {match && !match.gated && <MatchBadge result={match} showBreakdown={false} />}
         {isBoosted(job.boosted_until) && <Badge tone="blue">Promoted</Badge>}
         <Badge>{INDUSTRY_LABEL[job.industry]}</Badge>
         <Badge>{EMPLOYMENT_TYPE_LABEL[job.employment_type]}</Badge>
