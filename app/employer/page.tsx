@@ -27,30 +27,30 @@ export default async function EmployerDashboard({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { saved } = await searchParams;
-  const { supabase, user } = await requireEmployer("/employer");
+  const { supabase, orgId, isOwner } = await requireEmployer("/employer");
 
   const { data: employer } = await supabase
     .from("employer_profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", orgId)
     .single();
 
   const { data: jobs } = await supabase
     .from("jobs")
     .select("id, title, status, boosted_until, created_at, applications(count)")
-    .eq("employer_id", user.id)
+    .eq("employer_id", orgId)
     .order("created_at", { ascending: false });
 
   const { data: staff } = await supabase
     .from("staff")
     .select("id, full_name, role_title, net_salary, currency, period")
-    .eq("employer_id", user.id)
+    .eq("employer_id", orgId)
     .order("full_name", { ascending: true });
 
   const { count: pendingPrompts } = await supabase
     .from("verification_prompts")
     .select("*", { count: "exact", head: true })
-    .eq("employer_id", user.id)
+    .eq("employer_id", orgId)
     .eq("status", "pending");
   const ratePct =
     employer?.response_rate == null ? null : Math.round(employer.response_rate * 100);
@@ -120,6 +120,14 @@ export default async function EmployerDashboard({
               <ButtonLink href="/employer/engagements" variant="outline">
                 Engagements
               </ButtonLink>
+              <ButtonLink href="/employer/locations" variant="outline">
+                Locations
+              </ButtonLink>
+              {isOwner && (
+                <ButtonLink href="/employer/team" variant="outline">
+                  Team
+                </ButtonLink>
+              )}
               <ButtonLink href="/employer/profile" variant="outline">
                 Edit company
               </ButtonLink>

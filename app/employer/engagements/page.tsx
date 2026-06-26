@@ -32,14 +32,14 @@ const ATT_LABEL: Record<string, string> = {
 };
 
 export default async function EngagementsPage() {
-  const { supabase, user } = await requireEmployer("/employer/engagements");
+  const { supabase, user, orgId } = await requireEmployer("/employer/engagements");
 
   const { data: engagements } = await supabase
     .from("engagements")
     .select(
       "id, role_title, status, attendance, completed_at, created_at, worker:candidate_profiles(id, full_name, headline, reliability_score, reputation_state, rating_avg, rating_count)",
     )
-    .eq("employer_id", user.id)
+    .eq("employer_id", orgId)
     .order("created_at", { ascending: false });
 
   // Which engagements has this employer already reviewed?
@@ -53,7 +53,7 @@ export default async function EngagementsPage() {
   const { data: myRefs } = await supabase
     .from("hire_references")
     .select("engagement_id")
-    .eq("employer_id", user.id);
+    .eq("employer_id", orgId);
   const referenced = new Set((myRefs ?? []).map((r) => r.engagement_id));
 
   // Skill stacks for the roles in these engagements + each worker's status.
@@ -96,7 +96,7 @@ export default async function EngagementsPage() {
   const { data: outcomeEvents } = await supabase
     .from("billing_events")
     .select("engagement_id, type")
-    .eq("employer_id", user.id);
+    .eq("employer_id", orgId);
   const loggedMilestones = new Set(
     (outcomeEvents ?? []).map((e) => `${e.engagement_id}:${e.type}`),
   );

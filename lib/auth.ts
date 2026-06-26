@@ -60,12 +60,66 @@ export async function requireWorker(redirectTo: string) {
   return { supabase, user, profile: profile! };
 }
 
-/** Require an employer profile; otherwise route to onboarding. */
-export async function requireEmployer(redirectTo: string) {
+export interface EmployerContext {
+  orgId: string; // the employer organization the user is acting on
+  role: "owner" | "manager";
+  isOwner: boolean;
+  permissions: string[];
+}
+
+/**
+ * Resolve which employer organization a user can act on: their own org if they
+ * own an employer_profile, otherwise an active staff seat. Owners get
+ * orgId === their own id (so existing owner flows are unchanged).
+ */
+export async function getEmployerContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  hasEmployer: boolean,
+): Promise<EmployerContext | null> {
+  if (hasEmployer) {
+    return { orgId: userId, role: "owner", isOwner: true, permissions: [] };
+  }
+  // RLS returns only seats that reference this user (by id or invited email).
+  const { data: seats } = await supabase
+    .from("staff_seats")
+    .select("employer_id, role, permissions")
+    .neq("status", "revoked")
+    .limit(1);
+  const seat = seats?.[0];
+  if (seat) {
+    return {
+      orgId: seat.employer_id,
+      role: seat.role === "owner" ? "owner" : "manager",
+      isOwner: false,
+      permissions: seat.permissions ?? [],
+    };
+  }
+  return null;
+}
+
+/** Require employer access (own org or an active seat); else route to onboarding. */
+export async function requireEmployer(redirectTo = "/employer") {
   const { supabase, user, profile, hasEmployer } = await getAccount();
   if (!user) redirect(`/login?next=${redirectTo}`);
-  if (!hasEmployer) redirect("/onboarding");
-  return { supabase, user, profile: profile! };
+  const ctx = await getEmployerContext(supabase, user.id, hasEmployer);
+  if (!ctx) redirect("/onboarding");
+  return {
+    supabase,
+    user,
+    profile,
+    orgId: ctx.orgId,
+    role: ctx.role,
+    isOwner: ctx.isOwner,
+    permissions: ctx.permissions,
+  };
+}
+
+/** Require organization OWNER (blocks manager seats). */
+export async function requireOwner(redirectTo = "/employer") {
+  const r = await requireEmployer(redirectTo);
+  if (!r.isOwner) redirect("/employer");
+  return r;
 }
 
 /** Require an admin (reviewer) account. */

@@ -52,13 +52,13 @@ export default async function ManageJobPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, user } = await requireEmployer("/employer");
+  const { supabase, orgId } = await requireEmployer("/employer");
 
   const { data: job } = await supabase
     .from("jobs")
     .select("*")
     .eq("id", id)
-    .eq("employer_id", user.id)
+    .eq("employer_id", orgId)
     .single();
   if (!job) notFound();
 

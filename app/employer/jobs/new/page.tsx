@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -8,13 +9,20 @@ import { createJob } from "../../actions";
 
 export const metadata: Metadata = { title: "Post a job" };
 
+type Loc = { id: string; name: string; is_primary: boolean };
+
 export default async function NewJobPage() {
-  const { supabase, user } = await requireEmployer("/employer/jobs/new");
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("industry")
-    .eq("id", user.id)
-    .single();
+  const { supabase, orgId } = await requireEmployer("/employer/jobs/new");
+  const [{ data: employer }, { data: locData }] = await Promise.all([
+    supabase.from("employer_profiles").select("industry").eq("id", orgId).single(),
+    supabase
+      .from("locations")
+      .select("id, name, is_primary")
+      .eq("employer_id", orgId)
+      .order("is_primary", { ascending: false })
+      .order("name"),
+  ]);
+  const locations = (locData as Loc[] | null) ?? [];
 
   return (
     <>
@@ -59,7 +67,26 @@ export default async function NewJobPage() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Location">
+              <Field label="Branch / location">
+                {locations.length > 0 ? (
+                  <Select name="location_id" defaultValue={locations.find((l) => l.is_primary)?.id ?? ""}>
+                    <option value="">— None —</option>
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                        {l.is_primary ? " (primary)" : ""}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <p className="text-sm text-stone-500">
+                    <Link href="/employer/locations" className="text-signal hover:underline">
+                      Add a location →
+                    </Link>
+                  </p>
+                )}
+              </Field>
+              <Field label="Area / city">
                 <Input name="location" placeholder="Bangkok" />
               </Field>
               <Field label="Experience required (years)">
