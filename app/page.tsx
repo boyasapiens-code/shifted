@@ -212,18 +212,14 @@ export default async function HomePage({
                 finding your next chapter.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <ButtonLink
-                  href="/signup"
-                  size="lg"
-                  className="bg-paper text-ink shadow-none hover:bg-stone-200"
-                >
+                <ButtonLink href="/signup" size="lg">
                   Get started
                 </ButtonLink>
                 <ButtonLink
                   href="/jobs"
                   size="lg"
                   variant="outline"
-                  className="border-stone-600 text-paper hover:border-paper hover:bg-white/5"
+                  className="border-paper text-paper hover:bg-paper hover:text-ink"
                 >
                   Browse jobs
                 </ButtonLink>
@@ -293,7 +289,7 @@ function PreviewCard() {
             </span>
           ))}
         </div>
-        <div className="mt-5 flex h-11 items-center justify-center rounded-[var(--radius-base)] bg-ink text-sm font-medium text-paper">
+        <div className="mt-5 flex h-11 items-center justify-center rounded-full bg-signal text-sm font-bold text-paper">
           One-click apply
         </div>
         <p className="mt-3 text-center text-xs text-stone-400">

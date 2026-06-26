@@ -161,29 +161,6 @@
     text-decoration: underline;
   }
 
-  /* ── Daybreak preview theme — SCOPED to .daybreak only (no global impact).
-     Lets us preview the warm rebrand at /daybreak without remapping the live
-     brand tokens. Remove if Daybreak is not adopted. ───────────────────────── */
-  .daybreak {
-    --db-coral: #ff6b4a;
-    --db-coral-deep: #e85636;
-    --db-amber: #ffb23e;
-    --db-peach: #ffe0b0;
-    --db-peach-soft: #ffefd9;
-    --db-cream: #fff6ec;
-    --db-ink: #2b1b2e;
-    --db-muted: #9a7a6e;
-    --db-green: #2fa36b;
-    --db-green-soft: #e4f5ec;
-    --db-line: #efe2d2;
-    --db-tagtext: #8a4a1e;
-    background: var(--db-cream);
-    color: var(--db-ink);
-  }
-  .daybreak ::selection {
-    background: var(--db-peach);
-  }
-
   /* Faint grid texture for hero / feature backgrounds */
   .grid-texture {
     background-image:
