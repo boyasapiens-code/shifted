@@ -78,9 +78,8 @@ export async function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="hidden sm:block">
-            <LanguageSwitcher />
-          </div>
+          {/* Always visible — language toggle matters most on mobile (Thai-market, phone-first). */}
+          <LanguageSwitcher />
           {user ? (
             <>
               {onboarded && (
