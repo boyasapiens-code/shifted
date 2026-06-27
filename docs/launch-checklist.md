@@ -37,11 +37,29 @@ The `boyasapiens@gmail.com` account is an admin (`profiles.is_admin = true`) and
 can review verification at `/admin/verifications`. Grant additional reviewers by
 setting `is_admin = true` on their profile.
 
+## 5. Error monitoring — Sentry (wired; needs a DSN)
+The Sentry SDK is installed and configured but **dormant until a DSN is set** —
+without it, every Sentry call is a no-op, so local/preview stay silent.
+- Create a project at sentry.io (platform: **Next.js**), copy the DSN.
+- Add to `.env.local` and to Vercel → Project → Settings → Environment Variables:
+  - `NEXT_PUBLIC_SENTRY_DSN` — turns on error capture (client + server + edge).
+- Optional, for readable stack traces (uploads source maps at build time):
+  - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` (auth token scope:
+    `project:releases`). Without the token, builds still succeed — they just
+    skip the upload.
+- Privacy (PDPA): `sendDefaultPii: false` everywhere and **no Session Replay**,
+  so no cookies, IPs, request bodies, or DOM recordings are sent. Keep it that
+  way — worker PII must never leave the app via telemetry.
+- Verify after setting the DSN: a thrown error surfaces in the Sentry dashboard;
+  the styled fallback lives in `app/global-error.tsx`.
+
 ## Already done (in code)
 - ✅ Favicon / app icon (S-monogram) and Open Graph share image
 - ✅ PDPA-aware Privacy & Terms at `/legal` + consent checkbox at signup
 - ✅ `/auth/confirm` route for token-based sign-in links
 - ✅ Deployed to `shiftedth.com` with auto-deploy on push to `main`
+- ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§5)
+- ✅ Bilingual EN/ไทย across the app (cookie locale + header toggle)
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
