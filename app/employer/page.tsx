@@ -12,14 +12,10 @@ import { complianceScore, complianceStatus } from "@/lib/compliance";
 import { INDUSTRY_LABEL, isBoosted, isPaidPlan, PLAN_NAME, BOOST_PRICE } from "@/lib/constants";
 import type { Industry, PlanTier } from "@/lib/types";
 import { boostJob } from "./billing/actions";
+import { getDict } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Employer dashboard" };
 
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
-  published: "Live",
-  closed: "Closed",
-};
 
 export default async function EmployerDashboard({
   searchParams,
@@ -27,6 +23,12 @@ export default async function EmployerDashboard({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { saved } = await searchParams;
+  const t = (await getDict()).employer;
+  const STATUS_LABEL: Record<string, string> = {
+    draft: t.statusDraft,
+    published: t.statusLive,
+    closed: t.statusClosed,
+  };
   const { supabase, orgId, isOwner } = await requireEmployer("/employer");
 
   const { data: employer } = await supabase
@@ -70,13 +72,13 @@ export default async function EmployerDashboard({
         <Container className="py-12">
           {saved && (
             <p className="mb-6 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
-              Company profile saved.
+              {t.saved}
             </p>
           )}
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="eyebrow">Employer</p>
+              <p className="eyebrow">{t.eyebrow}</p>
               <h1 className="mt-2 flex flex-wrap items-center gap-2 text-3xl font-semibold tracking-tight">
                 {employer?.company_name}
                 {employer && <VerifiedBadge status={employer.verification} />}
@@ -103,35 +105,35 @@ export default async function EmployerDashboard({
             </div>
             <div className="flex flex-wrap gap-2">
               <ButtonLink href="/employer/verify">
-                Verify{pendingPrompts ? ` (${pendingPrompts})` : ""}
+                {t.navVerify}{pendingPrompts ? ` (${pendingPrompts})` : ""}
               </ButtonLink>
               <ButtonLink href="/employer/billing" variant="outline">
-                {employer && isPaidPlan(employer.plan) ? "Billing" : "Plans"}
+                {employer && isPaidPlan(employer.plan) ? t.navBilling : t.navPlans}
               </ButtonLink>
               <ButtonLink href="/employer/compliance" variant="outline">
-                Compliance
+                {t.navCompliance}
               </ButtonLink>
               <ButtonLink href="/employer/trust-circle" variant="outline">
-                Trust Circle
+                {t.navTrustCircle}
               </ButtonLink>
               <ButtonLink href="/marketing-solutions" variant="outline">
-                Marketing
+                {t.navMarketing}
               </ButtonLink>
               <ButtonLink href="/employer/engagements" variant="outline">
-                Engagements
+                {t.navEngagements}
               </ButtonLink>
               <ButtonLink href="/employer/locations" variant="outline">
-                Locations
+                {t.navLocations}
               </ButtonLink>
               {isOwner && (
                 <ButtonLink href="/employer/team" variant="outline">
-                  Team
+                  {t.navTeam}
                 </ButtonLink>
               )}
               <ButtonLink href="/employer/profile" variant="outline">
-                Edit company
+                {t.navEditCompany}
               </ButtonLink>
-              <ButtonLink href="/employer/jobs/new">Post a job</ButtonLink>
+              <ButtonLink href="/employer/jobs/new">{t.postJob}</ButtonLink>
             </div>
           </div>
 
@@ -141,17 +143,13 @@ export default async function EmployerDashboard({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-ink">Business verification</p>
+                    <p className="font-medium text-ink">{t.bizVerification}</p>
                     <VerificationBadge level={employer.verification_level} kind="employer" showZero />
                   </div>
-                  <p className="mt-1 text-sm text-stone-600">
-                    Earn a trust badge so candidates can filter to verified
-                    employers. Clear all 4 layers — Legal, Online, Customer
-                    reviews, Peer references.
-                  </p>
+                  <p className="mt-1 text-sm text-stone-600">{t.bizVerificationSub}</p>
                 </div>
                 <ButtonLink href="/employer/verification" variant="outline" size="sm">
-                  {employer.verification_level >= 4 ? "View verification" : "Get verified →"}
+                  {employer.verification_level >= 4 ? t.viewVerification : t.getVerified}
                 </ButtonLink>
               </div>
               <div className="mt-3">
@@ -166,7 +164,7 @@ export default async function EmployerDashboard({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-ink">Hiring compliance</p>
+                    <p className="font-medium text-ink">{t.hiringCompliance}</p>
                     <ComplianceBadge status={compStatus} />
                     {compStatus !== "ready" && (
                       <span className="rounded-full bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-600">
@@ -174,13 +172,10 @@ export default async function EmployerDashboard({
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-stone-600">
-                    Work through Thailand&apos;s hiring document trail (RD, SSO,
-                    DLPW) and earn a Compliance-ready badge candidates can see.
-                  </p>
+                  <p className="mt-1 text-sm text-stone-600">{t.hiringComplianceSub}</p>
                 </div>
                 <ButtonLink href="/employer/compliance" variant="outline" size="sm">
-                  {compStatus === "ready" ? "View checklist" : "Get compliant →"}
+                  {compStatus === "ready" ? t.viewChecklist : t.getCompliant}
                 </ButtonLink>
               </div>
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
@@ -195,19 +190,16 @@ export default async function EmployerDashboard({
           {/* Marketing cross-sell — Booyah */}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-base)] border border-stone-200 bg-ink p-5 text-paper">
             <div>
-              <p className="font-medium">Get more customers, not just staff</p>
-              <p className="mt-1 text-sm text-stone-300">
-                Hiring is half the battle. Booyah gets customers finding you on
-                Google, Maps, and AI.
-              </p>
+              <p className="font-medium">{t.crossSellTitle}</p>
+              <p className="mt-1 text-sm text-stone-300">{t.crossSellSub}</p>
             </div>
             <ButtonLink href="/marketing-solutions" variant="primary" size="sm">
-              Explore Marketing Solutions
+              {t.exploreMarketing}
             </ButtonLink>
           </div>
 
           {/* Jobs */}
-          <h2 className="mt-12 text-xl font-semibold tracking-tight">Your jobs</h2>
+          <h2 className="mt-12 text-xl font-semibold tracking-tight">{t.yourJobs}</h2>
           {jobs && jobs.length > 0 ? (
             <ul className="mt-4 divide-y divide-stone-100 rounded-[var(--radius-base)] border border-stone-200">
               {jobs.map((job) => {
@@ -228,17 +220,17 @@ export default async function EmployerDashboard({
                         {job.title}
                       </Link>
                       <p className="text-sm text-stone-500">
-                        {count} {count === 1 ? "applicant" : "applicants"}
+                        {count} {count === 1 ? t.applicant : t.applicants}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {isBoosted(job.boosted_until) ? (
-                        <Badge tone="blue">Promoted</Badge>
+                        <Badge tone="blue">{t.promoted}</Badge>
                       ) : (
                         job.status === "published" && (
                           <form action={boostJob.bind(null, job.id)}>
                             <button className={buttonClass("ghost", "sm")}>
-                              Boost · ฿{BOOST_PRICE}
+                              {t.boost} · ฿{BOOST_PRICE}
                             </button>
                           </form>
                         )
@@ -251,10 +243,10 @@ export default async function EmployerDashboard({
             </ul>
           ) : (
             <div className="mt-4 rounded-[var(--radius-base)] border border-dashed border-stone-300 p-10 text-center text-stone-500">
-              <p className="font-medium text-ink">No jobs yet.</p>
-              <p className="mt-1 text-sm">Post your first role to start hiring.</p>
+              <p className="font-medium text-ink">{t.noJobsTitle}</p>
+              <p className="mt-1 text-sm">{t.noJobsSub}</p>
               <ButtonLink href="/employer/jobs/new" className="mt-4">
-                Post a job
+                {t.postJob}
               </ButtonLink>
             </div>
           )}
@@ -263,9 +255,9 @@ export default async function EmployerDashboard({
           {staff && staff.length > 0 && (
             <>
               <div className="mt-12 flex items-center justify-between">
-                <h2 className="text-xl font-semibold tracking-tight">Team</h2>
+                <h2 className="text-xl font-semibold tracking-tight">{t.team}</h2>
                 <span className="text-sm text-stone-500">
-                  {staff.length} {staff.length === 1 ? "person" : "people"}
+                  {staff.length} {staff.length === 1 ? t.person : t.people}
                 </span>
               </div>
               <ul className="mt-4 divide-y divide-stone-100 rounded-[var(--radius-base)] border border-stone-200">

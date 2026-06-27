@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getAccount } from "@/lib/auth";
+import { getDict } from "@/lib/i18n";
 import { Logo } from "./Logo";
 import { ViewToggle } from "./ViewToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ButtonLink, Container, buttonClass } from "./ui";
 
 /**
@@ -9,6 +11,7 @@ import { ButtonLink, Container, buttonClass } from "./ui";
  * Worker/Employer view toggle (one account, both sides).
  */
 export async function SiteHeader() {
+  const t = (await getDict()).nav;
   let user: { id: string } | null = null;
   let hasWorker = false;
   let hasEmployer = false;
@@ -52,29 +55,32 @@ export async function SiteHeader() {
           <Logo />
           <nav className="hidden items-center gap-6 text-sm text-stone-600 md:flex">
             <Link href="/jobs" className="hover:text-ink">
-              Find work
+              {t.findWork}
             </Link>
             <Link href="/talent" className="hover:text-ink">
-              Find talent
+              {t.findTalent}
             </Link>
             <Link href="/about" className="hover:text-ink">
-              How it works
+              {t.howItWorks}
             </Link>
             <Link href="/rights" className="hover:text-ink">
-              Know Your Rights
+              {t.knowYourRights}
             </Link>
             <Link href="/marketing-solutions" className="hover:text-ink">
-              Marketing
+              {t.marketing}
             </Link>
             {isAdmin && (
               <Link href="/admin/verifications" className="font-medium text-signal hover:underline">
-                Admin
+                {t.admin}
               </Link>
             )}
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="hidden sm:block">
+            <LanguageSwitcher />
+          </div>
           {user ? (
             <>
               {onboarded && (
@@ -86,27 +92,27 @@ export async function SiteHeader() {
                 href="/messages"
                 className="relative hidden text-sm text-stone-600 hover:text-ink sm:inline"
               >
-                Messages
+                {t.messages}
                 {hasUnread && (
                   <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-signal" />
                 )}
               </Link>
               <ButtonLink href={dashboardHref} variant="ghost" size="sm">
-                Dashboard
+                {t.dashboard}
               </ButtonLink>
               <form action="/auth/signout" method="post">
                 <button className={buttonClass("outline", "sm")} type="submit">
-                  Sign out
+                  {t.signOut}
                 </button>
               </form>
             </>
           ) : (
             <>
               <ButtonLink href="/login" variant="ghost" size="sm">
-                Log in
+                {t.logIn}
               </ButtonLink>
               <ButtonLink href="/signup" variant="primary" size="sm">
-                Join SHIFTED
+                {t.join}
               </ButtonLink>
             </>
           )}

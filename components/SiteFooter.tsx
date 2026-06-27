@@ -1,63 +1,64 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { Container } from "./ui";
+import { getDict } from "@/lib/i18n";
 
-const COLUMNS: { title: string; links: [string, string][] }[] = [
-  {
-    title: "For candidates",
-    links: [
-      ["Find work", "/jobs"],
-      ["Create profile", "/signup"],
-      ["Get verified", "/candidate/verification"],
-      ["Safety Center", "/safety-center"],
-    ],
-  },
-  {
-    title: "For employers",
-    links: [
-      ["Find talent", "/talent"],
-      ["Post a job", "/employer/jobs/new"],
-      ["Talent Solutions", "/talent-solutions"],
-      ["Small Business", "/small-business"],
-    ],
-  },
-  {
-    title: "Solutions",
-    links: [
-      ["Marketing Solutions", "/marketing-solutions"],
-      ["Sales Solutions", "/sales-solutions"],
-      ["Advertising", "/advertising"],
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      ["About", "/about"],
-      ["Know Your Rights", "/rights"],
-      ["Careers", "/careers"],
-      ["Community Guidelines", "/community-guidelines"],
-      ["Accessibility", "/accessibility"],
-    ],
-  },
-];
+export async function SiteFooter() {
+  const t = (await getDict()).footer;
+  const L = t.links;
 
-const UTILITY: [string, string][] = [
-  ["Privacy & Terms", "/legal"],
-  ["Your data", "/account/privacy"],
-  ["Ad Choices", "/ad-choices"],
-  ["Mobile", "/mobile"],
-];
+  const COLUMNS: { title: string; links: [string, string][] }[] = [
+    {
+      title: t.forCandidates,
+      links: [
+        [L.findWork, "/jobs"],
+        [L.createProfile, "/signup"],
+        [L.getVerified, "/candidate/verification"],
+        [L.safetyCenter, "/safety-center"],
+      ],
+    },
+    {
+      title: t.forEmployers,
+      links: [
+        [L.findTalent, "/talent"],
+        [L.postJob, "/employer/jobs/new"],
+        [L.talentSolutions, "/talent-solutions"],
+        [L.smallBusiness, "/small-business"],
+      ],
+    },
+    {
+      title: t.solutions,
+      links: [
+        [L.marketingSolutions, "/marketing-solutions"],
+        [L.salesSolutions, "/sales-solutions"],
+        [L.advertising, "/advertising"],
+      ],
+    },
+    {
+      title: t.company,
+      links: [
+        [L.about, "/about"],
+        [L.knowYourRights, "/rights"],
+        [L.careers, "/careers"],
+        [L.community, "/community-guidelines"],
+        [L.accessibility, "/accessibility"],
+      ],
+    },
+  ];
 
-export function SiteFooter() {
+  const UTILITY: [string, string][] = [
+    [L.privacy, "/legal"],
+    [L.yourData, "/account/privacy"],
+    [L.adChoices, "/ad-choices"],
+    [L.mobile, "/mobile"],
+  ];
+
   return (
     <footer className="mt-24 border-t border-stone-200 py-12">
       <Container className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-xs">
           <Logo />
-          <p className="mt-3 text-sm text-stone-500">
-            The vetted talent network for Hospitality, Retail &amp; Lifestyle.
-            Your next chapter starts here.
-          </p>
+          <p className="mt-3 text-sm text-stone-500">{t.tagline}</p>
         </div>
         <div className="grid grid-cols-2 gap-x-10 gap-y-8 text-sm sm:grid-cols-4">
           {COLUMNS.map((col) => (
@@ -78,7 +79,7 @@ export function SiteFooter() {
       </Container>
 
       <Container className="mt-10 flex flex-col gap-3 border-t border-stone-100 pt-6 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between">
-        <p>© {new Date().getFullYear()} SHIFTED. Built by operators, for operators.</p>
+        <p>© {new Date().getFullYear()} SHIFTED. {t.copyright}</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {UTILITY.map(([label, href]) => (
             <Link key={href} href={href} className="hover:text-ink">

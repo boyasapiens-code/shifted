@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { matchScore } from "@/lib/matching/score";
 import { jobToMatch, workerToMatch, type JobRow, type CandidateRow } from "@/lib/matching/adapt";
 import type { MatchResult } from "@/lib/matching/types";
+import { getDict } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Find work" };
 
@@ -19,6 +20,7 @@ export default async function JobsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
+  const t = (await getDict()).jobs;
   const jobs = await getPublishedJobs({
     q: sp.q || undefined,
     industry: (sp.industry as Industry) || undefined,
@@ -64,13 +66,11 @@ export default async function JobsPage({
       <SiteHeader />
       <main>
         <Container className="py-12">
-          <p className="eyebrow">Find work</p>
+          <p className="eyebrow">{t.eyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            Open roles
+            {t.heading}
           </h1>
-          <p className="mt-1 text-stone-500">
-            Vetted employers across hospitality, retail &amp; lifestyle.
-          </p>
+          <p className="mt-1 text-stone-500">{t.sub}</p>
 
           {/* Filters — plain GET form, server-rendered results */}
           <form className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -78,16 +78,16 @@ export default async function JobsPage({
               <Input
                 name="q"
                 defaultValue={sp.q ?? ""}
-                placeholder="Search title or keyword"
+                placeholder={t.searchPlaceholder}
               />
             </div>
             <Input
               name="location"
               defaultValue={sp.location ?? ""}
-              placeholder="Location"
+              placeholder={t.locationPlaceholder}
             />
             <Select name="industry" defaultValue={sp.industry ?? ""}>
-              <option value="">All industries</option>
+              <option value="">{t.allIndustries}</option>
               {INDUSTRIES.map((i) => (
                 <option key={i.value} value={i.value}>
                   {i.label}
@@ -95,7 +95,7 @@ export default async function JobsPage({
               ))}
             </Select>
             <Select name="employment_type" defaultValue={sp.employment_type ?? ""}>
-              <option value="">Any type</option>
+              <option value="">{t.anyType}</option>
               {EMPLOYMENT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -103,10 +103,10 @@ export default async function JobsPage({
               ))}
             </Select>
             <Select name="employerMinLevel" defaultValue={sp.employerMinLevel ?? ""}>
-              <option value="">Any employer</option>
+              <option value="">{t.anyEmployer}</option>
               {EMPLOYER_VERIFICATION_LAYERS.map((l) => (
                 <option key={l.level} value={l.level}>
-                  Verified employer L{l.level}+
+                  {t.verifiedL}{l.level}+
                 </option>
               ))}
             </Select>
@@ -116,7 +116,7 @@ export default async function JobsPage({
               min={0}
               step={1000}
               defaultValue={sp.salaryMin ?? ""}
-              placeholder="Min salary (฿/mo)"
+              placeholder={t.minSalary}
             />
             <label className="flex items-center gap-2 px-1 text-sm text-stone-600">
               <input
@@ -126,16 +126,16 @@ export default async function JobsPage({
                 defaultChecked={sp.shiftWork === "1"}
                 className="h-4 w-4 accent-[var(--color-ink)]"
               />
-              Shift work
+              {t.shiftWork}
             </label>
             <button type="submit" className={buttonClass("primary", "md")}>
-              Search
+              {t.search}
             </button>
           </form>
 
           {/* Results */}
           <p className="mt-8 text-sm text-stone-500">
-            {jobs.length} {jobs.length === 1 ? "role" : "roles"}
+            {jobs.length} {jobs.length === 1 ? t.role : t.roles}
           </p>
           {jobs.length > 0 ? (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -145,7 +145,7 @@ export default async function JobsPage({
             </div>
           ) : (
             <div className="mt-4 rounded-[var(--radius-base)] border border-dashed border-stone-300 p-10 text-center text-stone-500">
-              No roles match your search. Try widening your filters.
+              {t.noResults}
             </div>
           )}
         </Container>

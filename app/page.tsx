@@ -6,6 +6,7 @@ import { JobCard } from "@/components/JobCard";
 import { ButtonLink, Container } from "@/components/ui";
 import { VerificationLadder } from "@/components/VerificationBadge";
 import { getPublishedJobs } from "@/lib/queries";
+import { getDict } from "@/lib/i18n";
 import { INDUSTRIES } from "@/lib/constants";
 
 export default async function HomePage({
@@ -22,6 +23,7 @@ export default async function HomePage({
   }
 
   const featured = await getPublishedJobs({ limit: 6 });
+  const t = (await getDict()).home;
 
   return (
     <>
@@ -34,34 +36,30 @@ export default async function HomePage({
             <div>
               <p className="eyebrow flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-signal" />
-                A new generation of job platform
+                {t.heroEyebrow}
               </p>
               <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-tightest sm:text-6xl">
-                Your next chapter
+                {t.heroTitleA}
                 <br />
-                starts here. <span className="text-signal">↗</span>
+                {t.heroTitleB} <span className="text-signal">↗</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-stone-600">
-                SHIFTED is the vetted talent network for Hospitality, Retail &amp;
-                Lifestyle. We connect great people with great companies — so
-                everyone can move forward.
+                {t.heroSub}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="/jobs" size="lg">
-                  Find a Job
+                  {t.findJob}
                 </ButtonLink>
                 <ButtonLink href="/signup" size="lg" variant="outline">
-                  Hire Talent
+                  {t.hireTalent}
                 </ButtonLink>
               </div>
               <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-500">
-                {["Vetted employers", "Pre-screened candidates", "Two-way reviews"].map(
-                  (t) => (
-                    <li key={t} className="flex items-center gap-1.5">
-                      <CheckIcon /> {t}
-                    </li>
-                  ),
-                )}
+                {[t.trust1, t.trust2, t.trust3].map((item) => (
+                  <li key={item} className="flex items-center gap-1.5">
+                    <CheckIcon /> {item}
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -74,7 +72,7 @@ export default async function HomePage({
 
         {/* ---------------- Industry strip ---------------- */}
         <Container className="py-10">
-          <p className="eyebrow mb-3">Browse by industry</p>
+          <p className="eyebrow mb-3">{t.browseIndustry}</p>
           <div className="flex flex-wrap gap-2">
             {INDUSTRIES.filter((i) => i.value !== "other").map((i) => (
               <Link
@@ -91,30 +89,10 @@ export default async function HomePage({
         {/* ---------------- Brand pillars ---------------- */}
         <section className="border-y border-stone-200 bg-stone-50">
           <Container className="grid gap-x-10 gap-y-12 py-16 sm:grid-cols-2 lg:grid-cols-4">
-            <Pillar
-              icon={<UserIcon />}
-              kicker="People First"
-              title="We put people before process"
-              body="Pre-screened candidates and verified employers. No fake resumes, no ghost listings."
-            />
-            <Pillar
-              icon={<ShieldIcon />}
-              kicker="Built on Trust"
-              title="Trust is our foundation"
-              body="Clear salaries, real workplace photos, and reputation that compounds over time."
-            />
-            <Pillar
-              icon={<ArrowIcon />}
-              kicker="Move Forward"
-              title="We create opportunities"
-              body="One-click apply, fast matching, and a hiring process that doesn't feel broken."
-            />
-            <Pillar
-              icon={<UsersIcon />}
-              kicker="Stronger Together"
-              title="Better teams. Better workplaces."
-              body="Good people and good companies, raising the standard for the whole industry."
-            />
+            <Pillar icon={<UserIcon />} kicker={t.pillars.p1k} title={t.pillars.p1t} body={t.pillars.p1b} />
+            <Pillar icon={<ShieldIcon />} kicker={t.pillars.p2k} title={t.pillars.p2t} body={t.pillars.p2b} />
+            <Pillar icon={<ArrowIcon />} kicker={t.pillars.p3k} title={t.pillars.p3t} body={t.pillars.p3b} />
+            <Pillar icon={<UsersIcon />} kicker={t.pillars.p4k} title={t.pillars.p4t} body={t.pillars.p4b} />
           </Container>
         </section>
 
@@ -122,18 +100,13 @@ export default async function HomePage({
         <Container className="py-16">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <p className="eyebrow">Earned, not typed</p>
+              <p className="eyebrow">{t.verifyEyebrow}</p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-                A profile is proven — on both sides.
+                {t.verifyTitle}
               </h2>
-              <p className="mt-3 max-w-md text-stone-600">
-                Candidates clear four levels of verified screening. Employers earn
-                a four-layer trust badge. Each side can filter the other by
-                verification level — so you only deal with the real, the
-                qualified, and the fair.
-              </p>
+              <p className="mt-3 max-w-md text-stone-600">{t.verifyBody}</p>
               <ButtonLink href="/about" variant="outline" className="mt-6">
-                How it works
+                {t.verifyCta}
               </ButtonLink>
             </div>
             <div className="rounded-[var(--radius-card)] border border-stone-200 bg-paper p-6 shadow-[var(--shadow-sm)]">
@@ -167,13 +140,13 @@ export default async function HomePage({
         <Container className="pb-16">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <p className="eyebrow">Now hiring</p>
+              <p className="eyebrow">{t.nowHiring}</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-                Featured roles
+                {t.featuredRoles}
               </h2>
             </div>
             <Link href="/jobs" className="text-sm font-medium text-ink underline">
-              View all
+              {t.viewAll}
             </Link>
           </div>
 
@@ -185,7 +158,7 @@ export default async function HomePage({
             </div>
           ) : (
             <div className="rounded-[var(--radius-card)] border border-dashed border-stone-300 p-10 text-center text-stone-500">
-              <p className="font-medium text-ink">No live roles yet.</p>
+              <p className="font-medium text-ink">{t.noRolesTitle}</p>
               <p className="mt-1 text-sm">
                 Once employers publish jobs, they&apos;ll appear here. Be the
                 first —{" "}
@@ -204,16 +177,12 @@ export default async function HomePage({
             <div className="grid-texture pointer-events-none absolute inset-0 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_right,black,transparent_70%)]" />
             <div className="relative">
               <h2 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-                Built by operators. Not recruiters.
+                {t.ctaTitle}
               </h2>
-              <p className="mt-3 max-w-xl text-stone-300">
-                We&apos;ve run the cafés, bars, hotels and shops. We built SHIFTED
-                because hiring shouldn&apos;t feel broken — it should feel like
-                finding your next chapter.
-              </p>
+              <p className="mt-3 max-w-xl text-stone-300">{t.ctaBody}</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <ButtonLink href="/signup" size="lg">
-                  Get started
+                  {t.getStarted}
                 </ButtonLink>
                 <ButtonLink
                   href="/jobs"
@@ -221,7 +190,7 @@ export default async function HomePage({
                   variant="outline"
                   className="border-paper text-paper hover:bg-paper hover:text-ink"
                 >
-                  Browse jobs
+                  {t.browseJobs}
                 </ButtonLink>
               </div>
             </div>

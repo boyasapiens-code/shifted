@@ -4,12 +4,14 @@ import { getAccount } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { Button, Input, buttonClass } from "@/components/ui";
 import { chooseCandidate, chooseEmployer } from "./actions";
+import { getDict } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Get started" };
 
 export default async function OnboardingPage() {
   const { user, hasWorker, hasEmployer, activeView } = await getAccount();
   if (!user) redirect("/login?next=/onboarding");
+  const t = (await getDict()).onboarding;
 
   // Already onboarded? Send them to their active side (or whichever exists).
   if (hasWorker || hasEmployer) {
@@ -24,13 +26,8 @@ export default async function OnboardingPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center px-5 py-12">
       <div className="w-full max-w-2xl">
         <Logo className="mb-8 text-xl" />
-        <h1 className="text-3xl font-semibold tracking-tight">
-          How will you use SHIFTED?
-        </h1>
-        <p className="mt-2 mb-8 text-stone-500">
-          Pick where to start. It&apos;s one account — you can switch on your
-          Employer or Worker side anytime.
-        </p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t.heading}</h1>
+        <p className="mt-2 mb-8 text-stone-500">{t.sub}</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Candidate */}
@@ -38,16 +35,13 @@ export default async function OnboardingPage() {
             action={chooseCandidate}
             className="flex flex-col rounded-[var(--radius-base)] border border-stone-200 p-6 transition-colors hover:border-ink"
           >
-            <p className="eyebrow">I&apos;m looking for work</p>
+            <p className="eyebrow">{t.candidateEyebrow}</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight">
-              Candidate
+              {t.candidateTitle}
             </h2>
-            <p className="mt-2 flex-1 text-sm text-stone-500">
-              Build a vetted profile, get discovered by good companies, and
-              apply in one click.
-            </p>
+            <p className="mt-2 flex-1 text-sm text-stone-500">{t.candidateSub}</p>
             <Button type="submit" className="mt-5 w-full">
-              Continue as candidate
+              {t.continueCandidate}
             </Button>
           </form>
 
@@ -56,22 +50,19 @@ export default async function OnboardingPage() {
             action={chooseEmployer}
             className="flex flex-col rounded-[var(--radius-base)] border border-stone-200 p-6 transition-colors hover:border-ink"
           >
-            <p className="eyebrow">I&apos;m hiring</p>
+            <p className="eyebrow">{t.employerEyebrow}</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight">
-              Employer
+              {t.employerTitle}
             </h2>
-            <p className="mt-2 flex-1 text-sm text-stone-500">
-              Post jobs, get pre-screened applicants, and build a verified
-              workplace reputation.
-            </p>
+            <p className="mt-2 flex-1 text-sm text-stone-500">{t.employerSub}</p>
             <Input
               name="company_name"
               required
-              placeholder="Company name"
+              placeholder={t.companyPlaceholder}
               className="mt-5"
             />
             <button type="submit" className={buttonClass("primary", "md", "mt-3 w-full")}>
-              Continue as employer
+              {t.continueEmployer}
             </button>
           </form>
         </div>

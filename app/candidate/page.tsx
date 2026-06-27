@@ -13,6 +13,7 @@ import { reviewEmployer } from "./actions";
 import { messageEmployer } from "@/app/messages/actions";
 import { ARCHETYPES, type ArchetypeKey } from "@/lib/archetypes";
 import { REPUTATION_LABEL, recoveryFactors, type ReputationState } from "@/lib/reputation";
+import { getDict } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Your dashboard" };
 
@@ -22,6 +23,7 @@ export default async function CandidateDashboard({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const { saved } = await searchParams;
+  const t = (await getDict()).candidate;
   const { supabase, user, profile } = await requireWorker("/candidate");
 
   const { data: candidate } = await supabase
@@ -93,12 +95,12 @@ export default async function CandidateDashboard({
         <Container className="py-12">
           {saved && (
             <p className="mb-6 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
-              Profile saved.
+              {t.saved}
             </p>
           )}
-          <p className="eyebrow">Candidate</p>
+          <p className="eyebrow">{t.eyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            {profile.full_name ? `Hi, ${profile.full_name.split(" ")[0]}` : "Your dashboard"}
+            {profile.full_name ? `Hi, ${profile.full_name.split(" ")[0]}` : t.defaultHeading}
           </h1>
 
           {/* Reputation recovery / status panel */}
@@ -118,22 +120,20 @@ export default async function CandidateDashboard({
               </p>
               {repState === "suspended" ? (
                 <p className="mt-1 text-sm text-stone-700">
-                  Your account is paused pending review after repeated no-shows.
-                  Showing up is everything here — reach out to support to resolve it.
+                  {t.reputation.suspended}
                 </p>
               ) : (
                 <>
                   {repFactors.length > 0 && (
                     <p className="mt-1 text-sm text-stone-700">
-                      What&apos;s pulling it down: {repFactors.join(" · ")}.
+                      {t.reputation.pullingDown} {repFactors.join(" · ")}.
                     </p>
                   )}
                   <p className="mt-2 text-sm font-medium text-ink">
-                    Complete 3 shifts on time to return to Active.
+                    {t.reputation.atRiskFix}
                   </p>
                   <p className="mt-1 text-xs text-stone-500">
-                    You&apos;re never banned for a number — old events expire after
-                    90 days, so a clean streak lifts your score quickly.
+                    {t.reputation.atRiskExpiry}
                   </p>
                 </>
               )}
@@ -160,8 +160,8 @@ export default async function CandidateDashboard({
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold">Profile</h2>
-                <span className="text-sm text-stone-500">{complete}% complete</span>
+                <h2 className="font-semibold">{t.profile}</h2>
+                <span className="text-sm text-stone-500">{complete}% {t.complete}</span>
               </div>
               <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
                 <div
@@ -170,7 +170,7 @@ export default async function CandidateDashboard({
                 />
               </div>
               <p className="mt-4 text-sm text-stone-600">
-                {candidate?.headline || "Add a headline so employers know your craft."}
+                {candidate?.headline || t.headlinePlaceholder}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <RatingSummary avg={candidate?.rating_avg ?? null} count={candidate?.rating_count ?? 0} />
@@ -180,28 +180,28 @@ export default async function CandidateDashboard({
                 />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {candidate?.open_to_work && <Badge>Open to work</Badge>}
+                {candidate?.open_to_work && <Badge>{t.openToWork}</Badge>}
                 {candidate?.location && <Badge>{candidate.location}</Badge>}
               </div>
 
               {/* Verification */}
               <div className="mt-5 rounded-[var(--radius-base)] bg-stone-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink">Verification</span>
+                  <span className="text-sm font-medium text-ink">{t.verification}</span>
                   <VerificationBadge level={candidate?.verification_level ?? 0} showZero />
                 </div>
                 <div className="mt-2">
                   <VerificationLadder level={candidate?.verification_level ?? 0} />
                 </div>
                 <ButtonLink href="/candidate/verification" size="sm" className="mt-3 w-full">
-                  {(candidate?.verification_level ?? 0) >= 4 ? "View verification" : "Get verified →"}
+                  {(candidate?.verification_level ?? 0) >= 4 ? t.viewVerification : t.getVerified}
                 </ButtonLink>
               </div>
 
               {/* Archetype */}
               <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink">Archetype</span>
+                  <span className="text-sm font-medium text-ink">{t.archetype}</span>
                   {candidate?.archetype && (
                     <span className="text-xs font-medium text-signal">
                       {ARCHETYPES[candidate.archetype as ArchetypeKey]?.tagline}
@@ -213,9 +213,7 @@ export default async function CandidateDashboard({
                     {ARCHETYPES[candidate.archetype as ArchetypeKey]?.name}
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm text-stone-500">
-                    Take the 2-minute assessment to find your fit.
-                  </p>
+                  <p className="mt-1 text-sm text-stone-500">{t.archetypePrompt}</p>
                 )}
                 <ButtonLink
                   href="/candidate/archetype"
@@ -223,16 +221,16 @@ export default async function CandidateDashboard({
                   size="sm"
                   className="mt-2 w-full"
                 >
-                  {candidate?.archetype ? "Retake assessment" : "Find your archetype →"}
+                  {candidate?.archetype ? t.retakeAssessment : t.findArchetype}
                 </ButtonLink>
               </div>
 
               {/* Skills & badges */}
               <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink">Skills &amp; badges</span>
+                  <span className="text-sm font-medium text-ink">{t.skillsBadges}</span>
                   <span className="text-xs text-stone-500">
-                    {verifiedSkillCount} verified
+                    {verifiedSkillCount} {t.verified}
                   </span>
                 </div>
                 {skillBadges.length > 0 && (
@@ -245,24 +243,21 @@ export default async function CandidateDashboard({
                   </div>
                 )}
                 <ButtonLink href="/candidate/skills" size="sm" className="mt-3 w-full">
-                  {verifiedSkillCount > 0 ? "View skills" : "Build your skills →"}
+                  {verifiedSkillCount > 0 ? t.viewSkills : t.buildSkills}
                 </ButtonLink>
               </div>
 
               {/* Trust Circle */}
               <div className="mt-3 rounded-[var(--radius-base)] bg-stone-50 p-4">
-                <span className="text-sm font-medium text-ink">Trust Circle</span>
-                <p className="mt-1 text-xs text-stone-500">
-                  Control who can vouch for you, and see every time an employer
-                  views your data.
-                </p>
+                <span className="text-sm font-medium text-ink">{t.trustCircle}</span>
+                <p className="mt-1 text-xs text-stone-500">{t.trustCircleSub}</p>
                 <ButtonLink
                   href="/candidate/trust-circle"
                   variant="outline"
                   size="sm"
                   className="mt-3 w-full"
                 >
-                  Manage consent →
+                  {t.manageConsent}
                 </ButtonLink>
               </div>
 
@@ -272,16 +267,16 @@ export default async function CandidateDashboard({
                 size="sm"
                 className="mt-3 w-full"
               >
-                Edit profile
+                {t.editProfile}
               </ButtonLink>
             </section>
 
             {/* Applications */}
             <section className="rounded-[var(--radius-base)] border border-stone-200 p-6 lg:col-span-2">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold">Applications</h2>
+                <h2 className="font-semibold">{t.applications}</h2>
                 <Link href="/jobs" className="text-sm font-medium text-ink underline">
-                  Browse jobs
+                  {t.browseJobs}
                 </Link>
               </div>
 
@@ -323,7 +318,7 @@ export default async function CandidateDashboard({
                           {employer && (
                             <form action={messageEmployer.bind(null, employer.id, job?.id)}>
                               <button className="text-xs font-medium text-ink underline">
-                                Message
+                                {t.message}
                               </button>
                             </form>
                           )}
@@ -334,9 +329,9 @@ export default async function CandidateDashboard({
                 </ul>
               ) : (
                 <div className="mt-4 rounded-[var(--radius-base)] border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500">
-                  No applications yet.{" "}
+                  {t.noApplications}{" "}
                   <Link href="/jobs" className="underline">
-                    Find your next shift
+                    {t.findNextShift}
                   </Link>
                   .
                 </div>
@@ -347,11 +342,8 @@ export default async function CandidateDashboard({
           {/* Work history — verified engagements + review the employer */}
           {engagements && engagements.length > 0 && (
             <section className="mt-8">
-              <h2 className="text-xl font-semibold tracking-tight">Work history</h2>
-              <p className="mt-1 text-sm text-stone-500">
-                Verified shifts you completed through SHIFTED. This is what builds
-                your reliability.
-              </p>
+              <h2 className="text-xl font-semibold tracking-tight">{t.workHistory}</h2>
+              <p className="mt-1 text-sm text-stone-500">{t.workHistorySub}</p>
               <ul className="mt-4 space-y-3">
                 {engagements.map((e) => {
                   const emp = Array.isArray(e.employer) ? e.employer[0] : e.employer;
@@ -371,7 +363,7 @@ export default async function CandidateDashboard({
                           {emp && (
                             <form action={messageEmployer.bind(null, emp.id, undefined)}>
                               <button className="text-xs font-medium text-ink underline">
-                                Message
+                                {t.message}
                               </button>
                             </form>
                           )}
@@ -382,12 +374,12 @@ export default async function CandidateDashboard({
                         <div className="mt-3 border-t border-stone-100 pt-3">
                           {myRating ? (
                             <p className="inline-flex items-center gap-2 text-sm text-stone-600">
-                              <RatingStars value={myRating} /> You reviewed this employer
+                              <RatingStars value={myRating} /> {t.reviewed}
                             </p>
                           ) : (
                             emp && (
                               <>
-                                <p className="text-sm font-medium text-ink">Review {emp.company_name}</p>
+                                <p className="text-sm font-medium text-ink">{t.reviewPrompt} {emp.company_name}</p>
                                 <ReviewForm
                                   action={reviewEmployer.bind(null, e.id, emp.id)}
                                   placeholder="Fair pay, good management, clear shifts…"

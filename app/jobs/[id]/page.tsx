@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getDict } from "@/lib/i18n";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { VerificationBadge } from "@/components/VerificationBadge";
@@ -136,6 +137,7 @@ export default async function JobDetailPage({
       .filter((q): q is Question => !!q);
   }
 
+  const t = (await getDict()).jobDetail;
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_period);
   const applyAction = applyToJob.bind(null, job.id);
 
@@ -147,7 +149,7 @@ export default async function JobDetailPage({
           {/* Main */}
           <div className="lg:col-span-2">
             <Link href="/jobs" className="text-sm text-stone-500 hover:text-ink">
-              ← All roles
+              {t.allRoles}
             </Link>
             <div className="mt-4 flex items-center gap-3">
               {job.employer?.logo_url && (
@@ -181,7 +183,7 @@ export default async function JobDetailPage({
             <div className="mt-4 flex flex-wrap gap-1.5">
               <Badge>{INDUSTRY_LABEL[job.industry]}</Badge>
               <Badge>{EMPLOYMENT_TYPE_LABEL[job.employment_type]}</Badge>
-              {job.shift_work && <Badge>Shift work</Badge>}
+              {job.shift_work && <Badge>{t.shiftWork}</Badge>}
               {job.location && <Badge>{job.location}</Badge>}
               {job.experience_required > 0 && (
                 <Badge>{job.experience_required}+ yrs exp</Badge>
@@ -189,7 +191,7 @@ export default async function JobDetailPage({
             </div>
 
             <article className="mt-8 whitespace-pre-wrap text-[15px] leading-relaxed text-stone-700">
-              {job.description || "No description provided."}
+              {job.description || t.noDescription}
             </article>
 
             <div className="relative mt-4">
@@ -198,7 +200,7 @@ export default async function JobDetailPage({
 
             {job.languages_required.length > 0 && (
               <div className="mt-8">
-                <p className="eyebrow mb-2">Languages</p>
+                <p className="eyebrow mb-2">{t.languages}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {job.languages_required.map((l) => (
                     <Badge key={l}>{l}</Badge>
@@ -209,7 +211,7 @@ export default async function JobDetailPage({
 
             {employerMedia?.photos && employerMedia.photos.length > 0 && (
               <div className="mt-10">
-                <p className="eyebrow mb-2">The workplace</p>
+                <p className="eyebrow mb-2">{t.workplace}</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {employerMedia.photos.map((url: string) => (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -239,32 +241,32 @@ export default async function JobDetailPage({
               {/* Fit for the logged-in worker */}
               {role === "candidate" && (fit || skillCoverage) && (
                 <div className="mt-5 rounded-[var(--radius-base)] bg-stone-50 p-4">
-                  <p className="eyebrow mb-1">Fit for you</p>
+                  <p className="eyebrow mb-1">{t.fitForYou}</p>
                   {fit && (
                     <p className="text-sm font-medium text-ink">
                       {fit === "strong" ? (
                         <span className="text-signal">
-                          Strong fit — your{" "}
-                          {ARCHETYPES[workerArchetype as ArchetypeKey]?.name} archetype
-                          suits this role
+                          {t.strongFitPrefix}{" "}
+                          {ARCHETYPES[workerArchetype as ArchetypeKey]?.name}{" "}
+                          {t.strongFitSuffix}
                         </span>
                       ) : (
-                        "Open fit — worth a look"
+                        t.openFit
                       )}
                     </p>
                   )}
                   {!workerArchetype && (
                     <p className="text-sm text-stone-500">
                       <Link href="/candidate/archetype" className="underline">
-                        Find your archetype
+                        {t.findArchetype}
                       </Link>{" "}
-                      to see your fit.
+                      {t.findArchetypeSuffix}
                     </p>
                   )}
                   {skillCoverage && (
                     <p className="mt-1 text-xs text-stone-500">
-                      You have {skillCoverage.have}/{skillCoverage.total} verified
-                      skills for this role.
+                      {t.skillsCoverage} {skillCoverage.have}/{skillCoverage.total}{" "}
+                      {t.skillsCoverageSuffix}
                     </p>
                   )}
                 </div>
@@ -273,13 +275,12 @@ export default async function JobDetailPage({
               <div className="mt-6">
                 {applied && (
                   <p className="mb-4 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
-                    Application sent. The employer can now review your profile.
+                    {t.applied}
                   </p>
                 )}
                 {error === "not_candidate" && (
                   <p className="mb-4 rounded-[var(--radius-base)] bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                    You&apos;re signed in as an employer. Switch to a candidate
-                    account to apply.
+                    {t.errorNotCandidate}
                   </p>
                 )}
 
@@ -289,13 +290,13 @@ export default async function JobDetailPage({
                     className="w-full"
                     size="lg"
                   >
-                    Log in to apply
+                    {t.loginToApply}
                   </ButtonLink>
                 )}
 
                 {user && role === "candidate" && existingStatus && (
                   <div className="rounded-[var(--radius-base)] border border-stone-200 px-3 py-3 text-sm">
-                    <p className="text-stone-500">Your application</p>
+                    <p className="text-stone-500">{t.yourApplication}</p>
                     <p className="mt-0.5 font-medium text-ink">
                       {APPLICATION_STATUS_LABEL[
                         existingStatus as keyof typeof APPLICATION_STATUS_LABEL
@@ -309,7 +310,7 @@ export default async function JobDetailPage({
                     {setQuestions.length > 0 && (
                       <div className="space-y-3">
                         <p className="text-xs font-medium text-stone-500">
-                          A few quick questions from the employer:
+                          {t.screeningIntro}
                         </p>
                         {setQuestions.map((q, i) => (
                           <QuestionField
@@ -323,27 +324,27 @@ export default async function JobDetailPage({
                     )}
                     <Textarea
                       name="cover_note"
-                      placeholder="Add a short note (optional) — why you're a fit."
+                      placeholder={t.coverNotePlaceholder}
                       maxLength={600}
                     />
                     <button
                       type="submit"
                       className={buttonClass("primary", "lg", "w-full")}
                     >
-                      {setQuestions.length > 0 ? "Submit application" : "One-click apply"}
+                      {setQuestions.length > 0 ? t.submitApplication : t.oneClickApply}
                     </button>
                   </form>
                 )}
 
                 {user && role === "employer" && (
                   <ButtonLink href="/employer" variant="outline" className="w-full">
-                    Go to employer dashboard
+                    {t.goToEmployer}
                   </ButtonLink>
                 )}
 
                 {user && !role && (
                   <ButtonLink href="/onboarding" className="w-full" size="lg">
-                    Finish setting up to apply
+                    {t.finishSetup}
                   </ButtonLink>
                 )}
               </div>
