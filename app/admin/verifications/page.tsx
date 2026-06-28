@@ -92,6 +92,9 @@ export default async function AdminVerificationsPage() {
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">Admin · Reviewer</p>
             <span className="flex flex-wrap gap-4">
+              <a href="/admin/metrics" className="text-sm font-medium text-signal hover:underline">
+                Metrics →
+              </a>
               <a href="/admin/moderation" className="text-sm font-medium text-signal hover:underline">
                 Moderation →
               </a>
