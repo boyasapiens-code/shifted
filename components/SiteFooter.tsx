@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { Container } from "./ui";
 import { getDict } from "@/lib/i18n";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 export async function SiteFooter() {
   const t = (await getDict()).footer;
@@ -59,6 +60,12 @@ export async function SiteFooter() {
         <div className="max-w-xs">
           <Logo />
           <p className="mt-3 text-sm text-stone-500">{t.tagline}</p>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="mt-4 inline-block text-sm text-stone-600 hover:text-ink"
+          >
+            {t.getInTouch}: {SUPPORT_EMAIL}
+          </a>
         </div>
         <div className="grid grid-cols-2 gap-x-10 gap-y-8 text-sm sm:grid-cols-4">
           {COLUMNS.map((col) => (

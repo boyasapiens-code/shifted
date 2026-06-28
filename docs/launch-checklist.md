@@ -16,14 +16,32 @@ Authentication → **URL Configuration**:
 > the earlier login failures.
 
 ## 2. Supabase — Custom SMTP (lifts the email rate limit)
-Project Settings → Authentication → **SMTP Settings** (sending from the
-Greenstead Private Email mailbox):
-- Sender email: `nisarat@greenstead-th.com` · Sender name: `SHIFTED`
-- Host: `mail.privateemail.com` · Port: `465` (or `587`)
-- Username: `nisarat@greenstead-th.com` · Password: *(mailbox password)*
+`shiftedth.com` email is on **Google Workspace**. Project Settings →
+Authentication → **SMTP Settings**:
+- Sender email: `admin@shiftedth.com` · Sender name: `SHIFTED`
+- Host: `smtp.gmail.com` · Port: `587` (STARTTLS) — or `465` (SSL)
+- Username: `admin@shiftedth.com`
+- Password: a **Google App Password**, *not* the mailbox password.
 
-Then paste [`docs/email/magic-link.html`](email/magic-link.html) into
-Authentication → Emails → **Magic Link** template.
+> ⚠️ **Google needs an App Password.** Plain-password SMTP is blocked. On the
+> `admin@shiftedth.com` account: enable **2-Step Verification**, then create an
+> App Password (Google Account → Security → App passwords) and paste that
+> 16-character value as the SMTP password. Enter it in the Supabase dashboard
+> yourself — it never goes in the repo.
+>
+> Note: `smtp.gmail.com` caps at ~2,000 messages/day (plenty for auth email at
+> this stage). If you outgrow it, switch to the Workspace SMTP **relay**
+> (`smtp-relay.gmail.com`), configured in the Google Admin console.
+
+Then paste each branded bilingual template into Authentication → Emails:
+- [`docs/email/magic-link.html`](email/magic-link.html) → **Magic Link**
+- [`docs/email/confirm-signup.html`](email/confirm-signup.html) → **Confirm signup**
+- [`docs/email/reset-password.html`](email/reset-password.html) → **Reset Password**
+
+> The app signs users in with magic links (OTP), so **Magic Link** is the
+> load-bearing one; the other two cover the confirm-email and password-reset
+> flows. All three use the `{{ .ConfirmationURL }}` variable and the Daybreak
+> palette (coral / cream / aubergine, Plus Jakarta Sans).
 
 ## 3. Google login (optional)
 - Google Cloud Console → Credentials → OAuth client (Web):
@@ -60,6 +78,9 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 - ✅ Deployed to `shiftedth.com` with auto-deploy on push to `main`
 - ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§5)
 - ✅ Bilingual EN/ไทย across the app (cookie locale + header toggle)
+- ✅ Branded bilingual auth email templates (magic link, confirm signup, reset
+  password) in `docs/email/` — paste into Supabase once SMTP is set (§2)
+- ✅ Contact address `admin@shiftedth.com` wired into footer + legal/privacy pages
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).

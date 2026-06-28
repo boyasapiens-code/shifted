@@ -6,3 +6,7 @@ export const SITE_URL =
 
 export const SITE_NAME = "SHIFTED";
 export const SITE_DOMAIN = "shiftedth.com";
+
+// Contact / support / sender address. Used as the "from" identity on outbound
+// mail, in the legal contact section, and the footer "get in touch" link.
+export const SUPPORT_EMAIL = "admin@shiftedth.com";

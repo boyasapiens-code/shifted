@@ -240,5 +240,6 @@ export const th: typeof en = {
       mobile: "มือถือ",
     },
     copyright: "สร้างโดยผู้ประกอบการ เพื่อผู้ประกอบการ",
+    getInTouch: "ติดต่อเรา",
   },
 };

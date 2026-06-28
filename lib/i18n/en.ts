@@ -240,5 +240,6 @@ export const en = {
       mobile: "Mobile",
     },
     copyright: "Built by operators, for operators.",
+    getInTouch: "Get in touch",
   },
 };

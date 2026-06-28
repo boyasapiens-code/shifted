@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Container } from "@/components/ui";
-import { SITE_DOMAIN } from "@/lib/site";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Privacy & Terms" };
 
@@ -109,7 +109,11 @@ export default function LegalPage() {
               <a href="/account/privacy" className="text-signal hover:underline">
                 Your data
               </a>
-              , or email <span className="text-ink">privacy@{SITE_DOMAIN}</span>.
+              , or email{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-signal hover:underline">
+                {SUPPORT_EMAIL}
+              </a>
+              .
             </p>
           </Section>
           <Section id="transfer" title="International transfer & cookies">
@@ -179,7 +183,11 @@ export default function LegalPage() {
           <Section id="law" title="Governing law & contact">
             <p>
               These terms are governed by the laws of Thailand. Questions or
-              requests: <span className="text-ink">legal@{SITE_DOMAIN}</span>. We
+              requests:{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-signal hover:underline">
+                {SUPPORT_EMAIL}
+              </a>
+              . We
               may update these terms; we&apos;ll post the new date here and, for
               material changes, notify you.
             </p>
