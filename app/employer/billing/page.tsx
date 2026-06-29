@@ -4,18 +4,26 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Badge, Container, buttonClass } from "@/components/ui";
 import { requireEmployer } from "@/lib/auth";
-import { PLANS, PLAN_NAME, isPaidPlan, BOOST_PRICE, OUTCOME_PRICING } from "@/lib/constants";
+import { PLANS, PLAN_NAME, isPaidPlan, BOOST_PRICE, BOOST_DAYS, OUTCOME_PRICING } from "@/lib/constants";
+import { stripeEnabled } from "@/lib/payments/stripe";
 import type { PlanTier } from "@/lib/types";
 import { upgradeTo, downgradeToFree, toggleFeatured } from "./actions";
 
 export const metadata: Metadata = { title: "Plan & billing" };
 
+const PAYMENT_ERRORS: Record<string, string> = {
+  "payment-init": "Couldn’t start that boost — please try again.",
+  stripe: "Payment couldn’t be set up. No charge was made — please try again.",
+  "stripe-session": "Stripe didn’t return a checkout link. No charge was made.",
+};
+
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gate?: string; upgraded?: string }>;
+  searchParams: Promise<{ gate?: string; upgraded?: string; error?: string }>;
 }) {
-  const { gate, upgraded } = await searchParams;
+  const { gate, upgraded, error } = await searchParams;
+  const boostLive = stripeEnabled();
   const { supabase, user } = await requireEmployer("/employer/billing");
 
   const { data: employer } = await supabase
@@ -65,6 +73,11 @@ export default async function BillingPage({
           {gate === "featured" && (
             <p className="mt-4 rounded-[var(--radius-base)] bg-amber-50 px-3 py-2 text-sm text-amber-800">
               Featured placement is a Pro feature. Upgrade to get featured.
+            </p>
+          )}
+          {error && PAYMENT_ERRORS[error] && (
+            <p className="mt-4 rounded-[var(--radius-base)] bg-red-50 px-3 py-2 text-sm text-red-700">
+              {PAYMENT_ERRORS[error]}
             </p>
           )}
 
@@ -194,16 +207,20 @@ export default async function BillingPage({
           {/* Add-ons: boost (pay-per-use) + featured */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[var(--radius-base)] border border-stone-200 p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <p className="font-medium text-ink">Boost a job</p>
                 <span className="text-sm font-semibold text-ink">
                   ฿{BOOST_PRICE}/boost
                 </span>
               </div>
               <p className="mt-1 text-sm text-stone-600">
-                Pay-per-use — promote any role to the top of search for 30 days.
-                No subscription needed. Boost from a job&apos;s page.
+                Pay-per-use — promote any role to the top of search for{" "}
+                {BOOST_DAYS} days. No subscription needed. Boost from a job&apos;s
+                page.
               </p>
+              <Badge tone={boostLive ? "green" : "amber"} className="mt-3">
+                {boostLive ? "Live — card & PromptPay" : "Preview — no charge yet"}
+              </Badge>
             </div>
 
             <div className="rounded-[var(--radius-base)] border border-stone-200 p-5">
@@ -224,8 +241,9 @@ export default async function BillingPage({
           </div>
 
           <p className="mt-6 text-xs text-stone-400">
-            Billing integration is not live. Upgrades activate features for
-            preview only — no payment is taken.
+            {boostLive
+              ? "Job boosts are charged through Stripe (card & PromptPay). Subscription tiers still activate for preview only — no recurring charge yet."
+              : "Billing runs in preview: boosts and upgrades activate features without taking payment. Add Stripe keys to charge boosts for real."}
           </p>
         </Container>
       </main>

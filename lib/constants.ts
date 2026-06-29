@@ -182,6 +182,7 @@ export const PLAN_NAME: Record<PlanTier, string> = {
 
 /** A boost is standalone pay-per-use (the lowest-friction first revenue). */
 export const BOOST_PRICE = 299; // THB, within the 199–499 test range
+export const BOOST_DAYS = 30; // how long a single boost promotes a job
 
 /** Is the employer on a paid subscription tier? */
 export function isPaidPlan(plan: PlanTier | null | undefined): boolean {

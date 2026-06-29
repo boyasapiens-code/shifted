@@ -15,8 +15,8 @@ import {
 import type { ApplicationStatus, EmploymentType } from "@/lib/types";
 import { setApplicationStatus, setJobStatus, startEngagement } from "../../actions";
 import { messageWorker } from "@/app/messages/actions";
-import { boostJob } from "../../billing/actions";
-import { isBoosted, BOOST_PRICE } from "@/lib/constants";
+import { startBoostCheckout } from "../../billing/actions";
+import { isBoosted, BOOST_PRICE, BOOST_DAYS } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Manage job" };
 
@@ -48,11 +48,19 @@ function labelFor(
 
 export default async function ManageJobPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    boosted?: string;
+    preview?: string;
+    boost_canceled?: string;
+    error?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { supabase, orgId } = await requireEmployer("/employer");
+  const sp = await searchParams;
+  const { supabase, orgId, isOwner } = await requireEmployer("/employer");
 
   const { data: job } = await supabase
     .from("jobs")
@@ -113,6 +121,31 @@ export default async function ManageJobPage({
             ← Dashboard
           </Link>
 
+          {sp.boosted && (
+            <div className="mt-4 rounded-[var(--radius-base)] border border-success/30 bg-success/10 px-4 py-3 text-sm text-ink">
+              <span className="font-semibold">Boost active.</span> This job is
+              promoted to the top of search for {BOOST_DAYS} days.
+              {sp.preview && (
+                <span className="text-stone-500">
+                  {" "}
+                  (Preview mode — no payment was taken. Add your Stripe keys to
+                  charge for real.)
+                </span>
+              )}
+            </div>
+          )}
+          {sp.boost_canceled && (
+            <div className="mt-4 rounded-[var(--radius-base)] border border-stone-300 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+              Checkout canceled — no payment was taken. You can boost this job
+              any time.
+            </div>
+          )}
+          {sp.error === "boost-needs-published" && (
+            <div className="mt-4 rounded-[var(--radius-base)] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              A job has to be live before it can be boosted. Publish it first.
+            </div>
+          )}
+
           <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">{job.title}</h1>
@@ -143,11 +176,13 @@ export default async function ManageJobPage({
                 (isBoosted(job.boosted_until) ? (
                   <Badge tone="blue">Promoted</Badge>
                 ) : (
-                  <form action={boostJob.bind(null, job.id)}>
-                    <button className={buttonClass("ghost", "sm")}>
-                      Boost · ฿{BOOST_PRICE}
-                    </button>
-                  </form>
+                  isOwner && (
+                    <form action={startBoostCheckout.bind(null, job.id)}>
+                      <button className={buttonClass("ghost", "sm")}>
+                        Boost · ฿{BOOST_PRICE}
+                      </button>
+                    </form>
+                  )
                 ))}
               <Link href={`/employer/jobs/${job.id}/questions`} className={buttonClass("outline", "sm")}>
                 {qset ? "Edit questions" : "Add screening questions"}

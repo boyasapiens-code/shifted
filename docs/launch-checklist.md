@@ -55,7 +55,36 @@ The `boyasapiens@gmail.com` account is an admin (`profiles.is_admin = true`) and
 can review verification at `/admin/verifications`. Grant additional reviewers by
 setting `is_admin = true` on their profile.
 
-## 5. Error monitoring — Sentry (wired; needs a DSN)
+## 5. Payments — Stripe boost checkout (wired; needs keys)
+The Phase-1 paid wedge — boosting a job (฿299 / 30 days) — is built against
+**Stripe-hosted Checkout** (no card data ever touches our server). It runs in
+**preview mode until keys are set**: clicking *Boost* grants the boost
+immediately with no charge, so the flow is testable now. Set the keys to charge
+for real.
+
+- Create a Stripe account for **Thailand** (THB), then from the Dashboard:
+  - **Developers → API keys**: copy the **Secret key** (`sk_live_…` / `sk_test_…`).
+  - **Settings → Payment methods**: enable **Card** and **PromptPay** (Thai
+    accounts) — Checkout shows whatever is enabled; nothing is hard-coded.
+- Add to `.env.local` **and** Vercel → Settings → Environment Variables:
+  - `STRIPE_SECRET_KEY` — flips the app from preview to live.
+  - `STRIPE_WEBHOOK_SECRET` — see next step.
+- **Webhook** (this is what actually grants the boost after payment):
+  - Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
+    `https://shiftedth.com/api/payments/webhook`
+  - Send events: `checkout.session.completed`,
+    `checkout.session.async_payment_succeeded`,
+    `checkout.session.async_payment_failed`, `checkout.session.expired`
+    (the async ones cover PromptPay's deferred confirmation).
+  - Copy the endpoint's **Signing secret** (`whsec_…`) → `STRIPE_WEBHOOK_SECRET`.
+- The webhook is the **only** path that sets a job's `boosted_until`; a DB trigger
+  blocks every other role, so a boost can't be granted without a confirmed charge.
+- Verify after setting keys: *Boost* on a live job opens Stripe Checkout; paying
+  (use Stripe test cards / PromptPay test flow) flips the `payments` row to
+  `paid` and promotes the job. Subscriptions (Starter/Growth) remain
+  preview-only for now.
+
+## 6. Error monitoring — Sentry (wired; needs a DSN)
 The Sentry SDK is installed and configured but **dormant until a DSN is set** —
 without it, every Sentry call is a no-op, so local/preview stay silent.
 - Create a project at sentry.io (platform: **Next.js**), copy the DSN.
@@ -76,7 +105,8 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 - ✅ PDPA-aware Privacy & Terms at `/legal` + consent checkbox at signup
 - ✅ `/auth/confirm` route for token-based sign-in links
 - ✅ Deployed to `shiftedth.com` with auto-deploy on push to `main`
-- ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§5)
+- ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§6)
+- ✅ Stripe boost checkout wired (preview-mode until keys; DB-enforced paywall) — add keys to charge (§5)
 - ✅ Bilingual EN/ไทย across the app (cookie locale + header toggle)
 - ✅ Branded bilingual auth email templates (magic link, confirm signup, reset
   password) in `docs/email/` — paste into Supabase once SMTP is set (§2)
@@ -85,4 +115,5 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
 - Replace seed/demo data with real accounts; the seed data stays gitignored.
-- Decide real billing (Stripe) to replace the monetization preview.
+- Add Stripe keys (§5) to charge for boosts; then design-partner the
+  Starter/Growth subscriptions before turning those live.

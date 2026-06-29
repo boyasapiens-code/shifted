@@ -11,7 +11,7 @@ import { requireEmployer } from "@/lib/auth";
 import { complianceScore, complianceStatus } from "@/lib/compliance";
 import { INDUSTRY_LABEL, isBoosted, isPaidPlan, PLAN_NAME, BOOST_PRICE } from "@/lib/constants";
 import type { Industry, PlanTier } from "@/lib/types";
-import { boostJob } from "./billing/actions";
+import { startBoostCheckout } from "./billing/actions";
 import { getDict } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Employer dashboard" };
@@ -227,8 +227,9 @@ export default async function EmployerDashboard({
                       {isBoosted(job.boosted_until) ? (
                         <Badge tone="blue">{t.promoted}</Badge>
                       ) : (
+                        isOwner &&
                         job.status === "published" && (
-                          <form action={boostJob.bind(null, job.id)}>
+                          <form action={startBoostCheckout.bind(null, job.id)}>
                             <button className={buttonClass("ghost", "sm")}>
                               {t.boost} · ฿{BOOST_PRICE}
                             </button>
