@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/ratelimit";
+import { notifyNewMessage } from "@/lib/notify";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -56,6 +58,10 @@ export async function sendMessage(conversationId: string, formData: FormData) {
   const body = String(formData.get("body") ?? "").trim();
   if (!body) redirect(`/messages/${conversationId}`);
 
+  if (!(await rateLimit(supabase, `msg:${user.id}`, 30, 60))) {
+    redirect(`/messages/${conversationId}?error=rate_limited`);
+  }
+
   const { error } = await supabase
     .from("messages")
     .insert({ conversation_id: conversationId, sender_id: user.id, body });
@@ -68,12 +74,32 @@ export async function sendMessage(conversationId: string, formData: FormData) {
     .eq("id", conversationId)
     .single();
   if (conv) {
-    const col =
-      conv.employer_id === user.id ? "employer_last_read_at" : "worker_last_read_at";
+    const isEmployer = conv.employer_id === user.id;
+    const col = isEmployer ? "employer_last_read_at" : "worker_last_read_at";
     await supabase
       .from("conversations")
       .update({ [col]: new Date().toISOString() })
       .eq("id", conversationId);
+
+    // Notify the other participant, using the sender's display name.
+    const recipientId = isEmployer ? conv.worker_id : conv.employer_id;
+    let fromName = "Someone";
+    if (isEmployer) {
+      const { data: e } = await supabase
+        .from("employer_profiles")
+        .select("company_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      fromName = e?.company_name ?? fromName;
+    } else {
+      const { data: w } = await supabase
+        .from("candidate_profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      fromName = w?.full_name ?? fromName;
+    }
+    await notifyNewMessage(recipientId, fromName, conversationId);
   }
 
   revalidatePath(`/messages/${conversationId}`);

@@ -283,6 +283,11 @@ export default async function JobDetailPage({
                     {t.errorNotCandidate}
                   </p>
                 )}
+                {error === "rate_limited" && (
+                  <p className="mb-4 rounded-[var(--radius-base)] bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    {t.errorRateLimited}
+                  </p>
+                )}
 
                 {!user && (
                   <ButtonLink

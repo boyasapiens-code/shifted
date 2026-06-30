@@ -4,6 +4,7 @@ import { getDict } from "@/lib/i18n";
 import { Logo } from "./Logo";
 import { ViewToggle } from "./ViewToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { MobileMenu } from "./MobileMenu";
 import { ButtonLink, Container, buttonClass } from "./ui";
 
 /**
@@ -27,14 +28,9 @@ export async function SiteHeader() {
     activeView = account.activeView;
 
     if (user) {
-      const { data: convos } = await account.supabase
-        .from("conversations")
-        .select("employer_id, worker_id, last_message_at, employer_last_read_at, worker_last_read_at");
-      hasUnread = (convos ?? []).some((c) => {
-        const lastRead =
-          c.employer_id === user!.id ? c.employer_last_read_at : c.worker_last_read_at;
-        return !lastRead || c.last_message_at > lastRead;
-      });
+      // One indexed boolean instead of scanning every conversation per render.
+      const { data: unread } = await account.supabase.rpc("has_unread_messages");
+      hasUnread = unread === true;
     }
   } catch {
     // No backend configured / network error — render signed-out nav.
@@ -80,41 +76,52 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           {/* Always visible — language toggle matters most on mobile (Thai-market, phone-first). */}
           <LanguageSwitcher />
-          {user ? (
-            <>
-              {onboarded && (
-                <div className="hidden sm:block">
-                  <ViewToggle activeView={activeView} />
-                </div>
-              )}
-              <Link
-                href="/messages"
-                className="relative hidden text-sm text-stone-600 hover:text-ink sm:inline"
-              >
-                {t.messages}
-                {hasUnread && (
-                  <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-signal" />
-                )}
-              </Link>
-              <ButtonLink href={dashboardHref} variant="ghost" size="sm">
-                {t.dashboard}
-              </ButtonLink>
-              <form action="/auth/signout" method="post">
-                <button className={buttonClass("outline", "sm")} type="submit">
-                  {t.signOut}
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <ButtonLink href="/login" variant="ghost" size="sm">
-                {t.logIn}
-              </ButtonLink>
-              <ButtonLink href="/signup" variant="primary" size="sm">
-                {t.join}
-              </ButtonLink>
-            </>
-          )}
+
+          {/* Desktop auth cluster */}
+          <div className="hidden items-center gap-2 md:flex">
+            {user ? (
+              <>
+                {onboarded && <ViewToggle activeView={activeView} />}
+                <Link
+                  href="/messages"
+                  className="relative text-sm text-stone-600 hover:text-ink"
+                >
+                  {t.messages}
+                  {hasUnread && (
+                    <span className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-signal" />
+                  )}
+                </Link>
+                <ButtonLink href={dashboardHref} variant="ghost" size="sm">
+                  {t.dashboard}
+                </ButtonLink>
+                <form action="/auth/signout" method="post">
+                  <button className={buttonClass("outline", "sm")} type="submit">
+                    {t.signOut}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <ButtonLink href="/login" variant="ghost" size="sm">
+                  {t.logIn}
+                </ButtonLink>
+                <ButtonLink href="/signup" variant="primary" size="sm">
+                  {t.join}
+                </ButtonLink>
+              </>
+            )}
+          </div>
+
+          {/* Mobile menu — the only nav on phones (desktop nav is md-only) */}
+          <MobileMenu
+            t={t}
+            user={!!user}
+            onboarded={onboarded}
+            isAdmin={isAdmin}
+            hasUnread={hasUnread}
+            dashboardHref={dashboardHref}
+            activeView={activeView}
+          />
         </div>
       </Container>
     </header>

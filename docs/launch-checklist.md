@@ -43,6 +43,20 @@ Then paste each branded bilingual template into Authentication → Emails:
 > flows. All three use the `{{ .ConfirmationURL }}` variable and the Daybreak
 > palette (coral / cream / aubergine, Plus Jakarta Sans).
 
+### 2b. App transactional emails (new-applicant / status / message)
+Separate from the Supabase **auth** SMTP above: the app sends its own
+notifications (new applicant → employer, application status → candidate, new
+message → recipient) via these env vars in `.env.local` **and** Vercel. The same
+Google App Password works. **No-op until set**, so nothing breaks before then.
+- `SMTP_HOST` (default `smtp.gmail.com`) · `SMTP_PORT` (default `587`)
+- `SMTP_USER` = `admin@shiftedth.com` · `SMTP_PASS` = the Google App Password
+- `EMAIL_FROM` (optional, default `SHIFTED <admin@shiftedth.com>`)
+
+> Why notifications matter: without them the marketplace loop is pull-only —
+> nobody learns they got an applicant, an interview, or a message until they
+> manually return. This is the single highest-leverage activation lever.
+> Templates: `lib/email/templates.ts`; senders: `lib/notify.ts`.
+
 ## 3. Google login (optional)
 - Google Cloud Console → Credentials → OAuth client (Web):
   - JS origins: `https://shiftedth.com`, `https://www.shiftedth.com`
@@ -111,9 +125,15 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 - ✅ Branded bilingual auth email templates (magic link, confirm signup, reset
   password) in `docs/email/` — paste into Supabase once SMTP is set (§2)
 - ✅ Contact address `admin@shiftedth.com` wired into footer + legal/privacy pages
+- ✅ Transactional email notifications (new applicant / status / message) wired —
+  no-op until app SMTP env is set (§2b)
+- ✅ Mobile navigation menu (phone-first market) — nav + messages + view toggle
+- ✅ Rate limits on apply / message / job-post (abuse guard, fail-open)
+- ✅ Seed candidate PII removed; platform starts clean for real signups
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
-- Replace seed/demo data with real accounts; the seed data stays gitignored.
+- Add app SMTP env (§2b) to switch on transactional notifications — the loop is
+  pull-only without them.
 - Add Stripe keys (§5) to charge for boosts; then design-partner the
   Starter/Growth subscriptions before turning those live.

@@ -90,6 +90,8 @@ export const en = {
     applied: "Application sent. The employer can now review your profile.",
     errorNotCandidate:
       "You're signed in as an employer. Switch to a candidate account to apply.",
+    errorRateLimited:
+      "You're doing that a lot. Please wait a moment and try again.",
     loginToApply: "Log in to apply",
     yourApplication: "Your application",
     screeningIntro: "A few quick questions from the employer:",

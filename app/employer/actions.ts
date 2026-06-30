@@ -7,6 +7,8 @@ import type { ApplicationStatus, EmploymentType, Industry } from "@/lib/types";
 import { OUTCOME_PRICING } from "@/lib/constants";
 import { moderateComment } from "@/lib/moderation";
 import { getEmployerContext } from "@/lib/auth";
+import { rateLimit } from "@/lib/ratelimit";
+import { notifyApplicationStatus } from "@/lib/notify";
 
 function toList(value: FormDataEntryValue | null): string[] {
   return String(value ?? "")
@@ -57,6 +59,11 @@ export async function updateEmployerProfile(formData: FormData) {
 
 export async function createJob(formData: FormData) {
   const { supabase, orgId } = await requireEmployer();
+
+  // Guard against runaway/scripted posting.
+  if (!(await rateLimit(supabase, `createjob:${orgId}`, 50, 86400))) {
+    redirect("/employer/jobs/new?error=rate_limited");
+  }
 
   const publish = formData.get("publish") === "1";
   const { data, error } = await supabase
@@ -339,5 +346,17 @@ export async function setApplicationStatus(
   const status = String(formData.get("status") ?? "") as ApplicationStatus;
   // RLS ensures only the owning employer can update applications to their jobs.
   await supabase.from("applications").update({ status }).eq("id", applicationId);
+
+  // Tell the candidate their application moved (no-op for non-notable states).
+  const { data: appRow } = await supabase
+    .from("applications")
+    .select("candidate_id, job:jobs(title)")
+    .eq("id", applicationId)
+    .single();
+  if (appRow?.candidate_id) {
+    const j = Array.isArray(appRow.job) ? appRow.job[0] : appRow.job;
+    await notifyApplicationStatus(appRow.candidate_id, j?.title ?? "a role", status);
+  }
+
   revalidatePath(`/employer/jobs/${jobId}`);
 }
