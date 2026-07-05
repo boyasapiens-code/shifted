@@ -18,6 +18,11 @@ export const RIGHTS_COPY: Record<RightsLang, {
   hubTitle: string;
   hubLede: string;
   articles: (n: number) => string;
+  minRead: (n: number) => string;
+  filterAll: string;
+  allTopics: string;
+  workersNote: string;
+  employersNote: string;
   comingSoon: string;
   category: string;
   backToHub: string;
@@ -49,6 +54,11 @@ export const RIGHTS_COPY: Record<RightsLang, {
     hubLede:
       "Current rules that shape work in Thailand — explained fairly for both sides, sourced, and dated. Not legal advice; a clear starting point.",
     articles: (n) => `${n} ${n === 1 ? "article" : "articles"}`,
+    minRead: (n) => `${n} min read`,
+    filterAll: "All",
+    allTopics: "All topics",
+    workersNote: "What you're owed — pay, hours, leave, and fair treatment.",
+    employersNote: "What you must get right — the same rules, from the operator's side.",
     comingSoon: "Coming soon.",
     category: "Category",
     backToHub: "← Know Your Rights",
@@ -86,6 +96,11 @@ export const RIGHTS_COPY: Record<RightsLang, {
     hubLede:
       "กฎเกณฑ์ปัจจุบันที่กำหนดการทำงานในไทย — อธิบายอย่างเป็นธรรมสำหรับทั้งสองฝ่าย พร้อมแหล่งอ้างอิงและวันที่ ไม่ใช่คำปรึกษาทางกฎหมาย แต่เป็นจุดเริ่มต้นที่ชัดเจน",
     articles: (n) => `${n} บทความ`,
+    minRead: (n) => `อ่าน ${n} นาที`,
+    filterAll: "ทั้งหมด",
+    allTopics: "ทุกหัวข้อ",
+    workersNote: "สิ่งที่คุณพึงได้รับ — ค่าจ้าง ชั่วโมงงาน วันลา และการปฏิบัติอย่างเป็นธรรม",
+    employersNote: "สิ่งที่คุณต้องทำให้ถูกต้อง — กฎเดียวกัน จากมุมของผู้ประกอบการ",
     comingSoon: "เร็ว ๆ นี้",
     category: "หมวดหมู่",
     backToHub: "← รู้สิทธิ์ของคุณ",
@@ -331,6 +346,17 @@ export function getRightsArticle(slug: string, lang: RightsLang = "en"): RightsA
 
 export function getRightsCategory(id: string) {
   return RIGHTS_CATEGORIES.find((c) => c.id === id) ?? null;
+}
+
+/** Estimated reading time. Thai text has no word spaces, so count characters
+ *  (~600/min) there; elsewhere count words (~200/min). Floor of 2 minutes. */
+export function readMinutes(article: RightsArticle): number {
+  const text = Object.values(article.sections).join(" ");
+  const n =
+    article.lang === "th"
+      ? text.replace(/\s+/g, "").length / 600
+      : text.split(/\s+/).filter(Boolean).length / 200;
+  return Math.max(2, Math.round(n));
 }
 
 /** True when an article is past its review cadence (staleness badge). */
