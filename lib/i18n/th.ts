@@ -236,6 +236,7 @@ export const th: typeof en = {
       careers: "ร่วมงานกับเรา",
       community: "กติกาชุมชน",
       accessibility: "การเข้าถึง",
+      faq: "คำถามที่พบบ่อย",
       privacy: "ความเป็นส่วนตัวและข้อกำหนด",
       yourData: "ข้อมูลของคุณ",
       adChoices: "ตัวเลือกโฆษณา",

@@ -15,25 +15,28 @@ Authentication → **URL Configuration**:
 > Without this, magic links redirect to `localhost`. This is the root cause of
 > the earlier login failures.
 
-## 2. Supabase — Custom SMTP (lifts the email rate limit)
-`shiftedth.com` email is on **Google Workspace**. Project Settings →
-Authentication → **SMTP Settings**:
-- Sender email: `admin@shiftedth.com` · Sender name: `SHIFTED`
-- Host: `smtp.gmail.com` · Port: `587` (STARTTLS) — or `465` (SSL)
-- Username: `admin@shiftedth.com`
-- Password: a **Google App Password**, *not* the mailbox password.
+## 2. Email sending — Resend (one provider for auth + app email)
+`shiftedth.com` is on **Namecheap email forwarding** (MX →
+`eforward*.registrar-servers.com`). Forwarding can *receive* mail at
+`admin@shiftedth.com` but **cannot send**, so there's no mailbox/App Password to
+use for SMTP. We send outbound through **Resend** instead (better deliverability
+than Gmail SMTP, free at this volume, keeps `admin@shiftedth.com` as the sender).
 
-> ⚠️ **Google needs an App Password.** Plain-password SMTP is blocked. On the
-> `admin@shiftedth.com` account: enable **2-Step Verification**, then create an
-> App Password (Google Account → Security → App passwords) and paste that
-> 16-character value as the SMTP password. Enter it in the Supabase dashboard
-> yourself — it never goes in the repo.
->
-> Note: `smtp.gmail.com` caps at ~2,000 messages/day (plenty for auth email at
-> this stage). If you outgrow it, switch to the Workspace SMTP **relay**
-> (`smtp-relay.gmail.com`), configured in the Google Admin console.
+**Set it up once, use it for both auth email and app notifications:**
+1. Create a Resend account, **Add Domain** `shiftedth.com`.
+2. Resend shows a few DNS records (SPF/DKIM, a `send.` subdomain + DMARC). Add
+   them at **Namecheap → Domain → Advanced DNS**. These sit alongside the
+   existing forwarding MX — they don't break inbound mail.
+3. Wait for Resend to show the domain **Verified** (usually minutes).
+4. Create an **API key** → this is the SMTP password.
 
-Then paste each branded bilingual template into Authentication → Emails:
+SMTP credentials (used in both places below):
+- Host `smtp.resend.com` · Port `465` (SSL) · Username `resend` · Password = the API key
+- Sender: `admin@shiftedth.com` · Sender name `SHIFTED`
+
+**Supabase auth email** (lifts the built-in rate limit): Project Settings →
+Authentication → **SMTP Settings** → enter the credentials above. Then paste each
+branded bilingual template into Authentication → Emails:
 - [`docs/email/magic-link.html`](email/magic-link.html) → **Magic Link**
 - [`docs/email/confirm-signup.html`](email/confirm-signup.html) → **Confirm signup**
 - [`docs/email/reset-password.html`](email/reset-password.html) → **Reset Password**
@@ -44,13 +47,15 @@ Then paste each branded bilingual template into Authentication → Emails:
 > palette (coral / cream / aubergine, Plus Jakarta Sans).
 
 ### 2b. App transactional emails (new-applicant / status / message)
-Separate from the Supabase **auth** SMTP above: the app sends its own
-notifications (new applicant → employer, application status → candidate, new
-message → recipient) via these env vars in `.env.local` **and** Vercel. The same
-Google App Password works. **No-op until set**, so nothing breaks before then.
-- `SMTP_HOST` (default `smtp.gmail.com`) · `SMTP_PORT` (default `587`)
-- `SMTP_USER` = `admin@shiftedth.com` · `SMTP_PASS` = the Google App Password
+The app sends its own notifications (new applicant → employer, application
+status → candidate, new message → recipient) via these env vars in `.env.local`
+**and** Vercel — the **same Resend credentials** as §2. **No-op until set**, so
+nothing breaks before then.
+- `SMTP_HOST=smtp.resend.com` · `SMTP_PORT=465`
+- `SMTP_USER=resend` · `SMTP_PASS=` the Resend API key
 - `EMAIL_FROM` (optional, default `SHIFTED <admin@shiftedth.com>`)
+
+Verify locally once set: `node scripts/test-email.mjs` sends a real test email.
 
 > Why notifications matter: without them the marketplace loop is pull-only —
 > nobody learns they got an applicant, an interview, or a message until they

@@ -48,6 +48,7 @@ export async function SiteFooter() {
   ];
 
   const UTILITY: [string, string][] = [
+    [L.faq, "/faq"],
     [L.privacy, "/legal"],
     [L.yourData, "/account/privacy"],
     [L.adChoices, "/ad-choices"],

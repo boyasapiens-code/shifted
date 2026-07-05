@@ -6,8 +6,9 @@ import { SUPPORT_EMAIL, SITE_NAME } from "@/lib/site";
 // like Stripe/Sentry: a no-op until SMTP_USER + SMTP_PASS are set, so the app
 // builds and runs today and starts sending the moment creds land in env.
 //
-// Google Workspace SMTP: host smtp.gmail.com, port 587, user = a mailbox,
-// pass = a Google App Password (see launch-checklist §2).
+// Provider-agnostic SMTP. We use Resend (shiftedth.com is on Namecheap email
+// forwarding, which can't send): host smtp.resend.com, port 465, user "resend",
+// pass = a Resend API key. See launch-checklist §2.
 
 export function emailEnabled(): boolean {
   return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -19,10 +20,11 @@ const FROM =
 let _transport: nodemailer.Transporter | null = null;
 function transport() {
   if (!_transport) {
+    const port = Number(process.env.SMTP_PORT || 465);
     _transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: Number(process.env.SMTP_PORT || 587) === 465,
+      host: process.env.SMTP_HOST || "smtp.resend.com",
+      port,
+      secure: port === 465,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
   }

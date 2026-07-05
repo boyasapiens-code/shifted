@@ -236,6 +236,7 @@ export const en = {
       careers: "Careers",
       community: "Community Guidelines",
       accessibility: "Accessibility",
+      faq: "FAQ",
       privacy: "Privacy & Terms",
       yourData: "Your data",
       adChoices: "Ad Choices",

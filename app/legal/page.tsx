@@ -6,7 +6,7 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Privacy & Terms" };
 
-const UPDATED = "24 June 2026";
+const UPDATED = "3 July 2026";
 
 function Section({
   id,
@@ -165,11 +165,14 @@ export default function LegalPage() {
           </Section>
           <Section id="plans" title="Plans & payments">
             <p>
-              Workers use SHIFTED for free. Employer plans (Pro), job boosts, and
-              featured placement are paid features. Billing is not yet live —
-              paid features are currently provided for preview without charge.
-              When billing launches, prices and terms will be shown before you
-              pay.
+              Workers use SHIFTED for free — always. For employers, posting jobs
+              is free; a job <strong>boost</strong> is a paid feature with the
+              price shown before you pay, charged securely through Stripe (we
+              never see or store your card details). Boosts promote a job for a
+              fixed period and are non-refundable once the promotion has started.
+              Employer subscription plans and featured placement are currently
+              provided for preview without charge; when they go live, prices and
+              terms will be shown before you pay.
             </p>
           </Section>
           <Section id="liability" title="Disclaimers & liability">

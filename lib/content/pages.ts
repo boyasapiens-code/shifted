@@ -1,5 +1,9 @@
 // Content registry for the static company / legal / solutions pages.
 // Each slug maps to a route under app/<slug>/page.tsx via <InfoPage>.
+// All contact addresses use SUPPORT_EMAIL — it's the only real mailbox
+// (role addresses like privacy@/safety@ don't exist and would bounce).
+
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 export interface InfoSection {
   heading: string;
@@ -26,7 +30,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Found a barrier?",
-        body: "If something is hard to use with assistive technology, tell us at access@shiftedth.com and we'll fix it. Real feedback from real people is how we improve.",
+        body: `If something is hard to use with assistive technology, tell us at ${SUPPORT_EMAIL} and we'll fix it. Real feedback from real people is how we improve.`,
       },
     ],
   },
@@ -78,7 +82,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Get in touch",
-        body: "We hire infrequently but always want to meet good people. Send a note and what you'd want to work on to careers@shiftedth.com.",
+        body: `We hire infrequently but always want to meet good people. Send a note and what you'd want to work on to ${SUPPORT_EMAIL}.`,
       },
     ],
   },
@@ -110,7 +114,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Your data, your control",
-        body: "You can view, edit, export or delete your profile data. Email privacy@shiftedth.com for any data request.",
+        body: `You can view, edit, export or delete your profile data. Email ${SUPPORT_EMAIL} for any data request.`,
       },
       {
         heading: "Terms of use",
@@ -130,7 +134,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Your controls",
-        body: "Manage notification and visibility preferences in your account settings. Questions: privacy@shiftedth.com.",
+        body: `Manage notification and visibility preferences in your account settings. Questions: ${SUPPORT_EMAIL}.`,
       },
     ],
   },
@@ -146,7 +150,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Interested?",
-        body: "We're onboarding early partners. Reach us at partners@shiftedth.com.",
+        body: `We're onboarding early partners. Reach us at ${SUPPORT_EMAIL}.`,
       },
     ],
   },
@@ -162,7 +166,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Talk to us",
-        body: "For multi-venue and chain accounts, email sales@shiftedth.com and we'll set you up.",
+        body: `For multi-venue and chain accounts, email ${SUPPORT_EMAIL} and we'll set you up.`,
       },
     ],
   },
@@ -214,7 +218,7 @@ export const INFO_PAGES: Record<string, InfoPageContent> = {
       },
       {
         heading: "Report a problem",
-        body: "See something unsafe or a scam? Email safety@shiftedth.com — we review every report.",
+        body: `See something unsafe or a scam? Email ${SUPPORT_EMAIL} — we review every report.`,
       },
     ],
   },
