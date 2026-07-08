@@ -12,6 +12,7 @@ status: legal-review
 related:
   - warnings-and-fair-discipline
   - minimum-wage-and-service-charge
+  - employment-contracts-and-starting-right
 seo:
   keywords:
     - "severance pay thailand"

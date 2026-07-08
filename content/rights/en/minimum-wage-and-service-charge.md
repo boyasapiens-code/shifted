@@ -12,6 +12,7 @@ status: legal-review
 related:
   - probation-notice-and-severance
   - warnings-and-fair-discipline
+  - service-charge-tips-and-shift-basics
 seo:
   keywords:
     - "thailand minimum wage 2026"
