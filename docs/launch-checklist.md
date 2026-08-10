@@ -3,19 +3,11 @@
 The app is built and deployed. These are the remaining **dashboard-only** steps
 (they can't be done in code) to make it production-ready for real users.
 
-## 1. Supabase — Auth URL configuration ⚠️ (fixes login redirects)
-Authentication → **URL Configuration**:
-- **Site URL:** `https://shiftedth.com`
-- **Redirect URLs:** add
-  - `https://shiftedth.com/auth/callback`
-  - `https://www.shiftedth.com/auth/callback`
-  - `https://www.shiftedth.com/auth/confirm`
-  - `http://localhost:3000/auth/callback` (dev)
+## 1. Supabase — Auth URL configuration ✅ done
+Confirmed working: a real magic-link sign-in redirected correctly to
+`shiftedth.com`, not `localhost`.
 
-> Without this, magic links redirect to `localhost`. This is the root cause of
-> the earlier login failures.
-
-## 2. Email sending — Resend (one provider for auth + app email)
+## 2. Email sending — Resend (one provider for auth + app email) ✅ done
 `shiftedth.com` is on **Namecheap email forwarding** (MX →
 `eforward*.registrar-servers.com`). Forwarding can *receive* mail at
 `admin@shiftedth.com` but **cannot send**, so there's no mailbox/App Password to
@@ -34,28 +26,27 @@ SMTP credentials (used in both places below):
 - Host `smtp.resend.com` · Port `465` (SSL) · Username `resend` · Password = the API key
 - Sender: `admin@shiftedth.com` · Sender name `SHIFTED`
 
-**Supabase auth email** (lifts the built-in rate limit): Project Settings →
-Authentication → **SMTP Settings** → enter the credentials above. Then paste each
-branded bilingual template into Authentication → Emails:
+**Supabase auth email**: Project Settings → Authentication → **Emails → SMTP
+Settings** → credentials above are entered and saved. The three branded
+bilingual templates are pasted into Authentication → Emails:
 - [`docs/email/magic-link.html`](email/magic-link.html) → **Magic Link**
 - [`docs/email/confirm-signup.html`](email/confirm-signup.html) → **Confirm signup**
 - [`docs/email/reset-password.html`](email/reset-password.html) → **Reset Password**
 
-> The app signs users in with magic links (OTP), so **Magic Link** is the
-> load-bearing one; the other two cover the confirm-email and password-reset
-> flows. All three use the `{{ .ConfirmationURL }}` variable and the Daybreak
-> palette (coral / cream / aubergine, Plus Jakarta Sans).
+Verified end to end: a real magic-link email was requested, arrived from
+`admin@shiftedth.com` with the branded template intact, and signing in via
+that link worked.
 
-### 2b. App transactional emails (new-applicant / status / message)
-The app sends its own notifications (new applicant → employer, application
-status → candidate, new message → recipient) via these env vars in `.env.local`
-**and** Vercel — the **same Resend credentials** as §2. **No-op until set**, so
-nothing breaks before then.
-- `SMTP_HOST=smtp.resend.com` · `SMTP_PORT=465`
-- `SMTP_USER=resend` · `SMTP_PASS=` the Resend API key
-- `EMAIL_FROM` (optional, default `SHIFTED <admin@shiftedth.com>`)
+### 2b. App transactional emails (new-applicant / status / message) ✅ done
+`SMTP_USER` / `SMTP_PASS` (a separate Resend API key from the one Supabase
+uses, so either can be rotated independently) are set in both `.env.local` and
+Vercel Production. `SMTP_HOST`/`SMTP_PORT`/`EMAIL_FROM` are left unset and rely
+on their in-code defaults (`smtp.resend.com:465`, `SHIFTED <admin@shiftedth.com>`).
 
-Verify locally once set: `node scripts/test-email.mjs` sends a real test email.
+Not yet verified with a *real* notification firing — the platform has 0
+applications and 0 messages so far, so `lib/notify.ts` hasn't actually been
+exercised live. Worth a real check once there's real activity. Manual check
+any time: `node scripts/test-email.mjs`.
 
 > Why notifications matter: without them the marketplace loop is pull-only —
 > nobody learns they got an applicant, an interview, or a message until they
@@ -71,37 +62,41 @@ Verify locally once set: `node scripts/test-email.mjs` sends a real test email.
 
 ## 4. Verification reviewer
 The `boyasapiens@gmail.com` account is an admin (`profiles.is_admin = true`) and
-can review verification at `/admin/verifications`. Grant additional reviewers by
-setting `is_admin = true` on their profile.
+can review verification at `/admin/verifications`. `is_admin` is guarded by a
+DB trigger (`profiles_guard_admin()`, migration 0030) — it can only be changed
+by the service role, never through the app or a user's own client. Grant
+additional reviewers with a one-off service-role script/query
+(`update profiles set is_admin = true where id = '<uid>'` run via
+`scripts/db-apply.mjs`-style direct connection), not through any in-app action.
 
-## 5. Payments — Stripe boost checkout (wired; needs keys)
-The Phase-1 paid wedge — boosting a job (฿299 / 30 days) — is built against
-**Stripe-hosted Checkout** (no card data ever touches our server). It runs in
-**preview mode until keys are set**: clicking *Boost* grants the boost
-immediately with no charge, so the flow is testable now. Set the keys to charge
-for real.
+## 5. Payments — Stripe boost checkout (live, test-mode key)
+The Phase-1 paid wedge — boosting a job (฿299 / 30 days) — runs on
+**Stripe-hosted Checkout** (no card data ever touches our server).
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set in both `.env.local`
+and Vercel Production, so the app is **out of preview mode** — clicking
+*Boost* opens a real Stripe Checkout session. The key currently set is a
+**`sk_test_…` key**, so it charges nothing real yet; swap it for `sk_live_…`
+(and a matching live-mode `STRIPE_WEBHOOK_SECRET`) when ready to actually
+collect money.
 
-- Create a Stripe account for **Thailand** (THB), then from the Dashboard:
-  - **Developers → API keys**: copy the **Secret key** (`sk_live_…` / `sk_test_…`).
-  - **Settings → Payment methods**: enable **Card** and **PromptPay** (Thai
-    accounts) — Checkout shows whatever is enabled; nothing is hard-coded.
-- Add to `.env.local` **and** Vercel → Settings → Environment Variables:
-  - `STRIPE_SECRET_KEY` — flips the app from preview to live.
-  - `STRIPE_WEBHOOK_SECRET` — see next step.
-- **Webhook** (this is what actually grants the boost after payment):
-  - Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
-    `https://shiftedth.com/api/payments/webhook`
+- **Webhook** (this is what actually grants the boost after payment) is
+  registered at `https://www.shiftedth.com/api/payments/webhook` — **must be
+  the `www` host**. The apex `shiftedth.com` 308-redirects to `www`, and
+  Stripe does not follow redirects on webhook delivery, so an apex-registered
+  endpoint silently never receives anything (this exact bug shipped once and
+  was caught and fixed by testing a real payment end to end).
   - Send events: `checkout.session.completed`,
     `checkout.session.async_payment_succeeded`,
     `checkout.session.async_payment_failed`, `checkout.session.expired`
     (the async ones cover PromptPay's deferred confirmation).
-  - Copy the endpoint's **Signing secret** (`whsec_…`) → `STRIPE_WEBHOOK_SECRET`.
-- The webhook is the **only** path that sets a job's `boosted_until`; a DB trigger
-  blocks every other role, so a boost can't be granted without a confirmed charge.
-- Verify after setting keys: *Boost* on a live job opens Stripe Checkout; paying
-  (use Stripe test cards / PromptPay test flow) flips the `payments` row to
-  `paid` and promotes the job. Subscriptions (Starter/Growth) remain
-  preview-only for now.
+- The webhook is the **only** path that sets a job's `boosted_until`; a DB
+  trigger (`jobs_guard_boost()`) blocks every other role, so a boost can't be
+  granted without a confirmed charge — RLS separately blocks an employer from
+  UPDATE-ing their own `payments` row at all.
+- **Verified end to end**: boosted a real job with the Stripe test card
+  (`4242 4242 4242 4242`), confirmed in the DB (not just the browser) that the
+  webhook flipped `payments.status` to `paid` and extended `boosted_until` by
+  30 days. Subscriptions (Starter/Growth) remain preview-only for now.
 
 ## 6. Error monitoring — Sentry (wired; needs a DSN)
 The Sentry SDK is installed and configured but **dormant until a DSN is set** —
@@ -125,20 +120,28 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 - ✅ `/auth/confirm` route for token-based sign-in links
 - ✅ Deployed to `shiftedth.com` with auto-deploy on push to `main`
 - ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§6)
-- ✅ Stripe boost checkout wired (preview-mode until keys; DB-enforced paywall) — add keys to charge (§5)
+- ✅ Stripe boost checkout live in test mode, verified end to end (§5) — swap
+  to an `sk_live_…` key to charge for real
 - ✅ Bilingual EN/ไทย across the app (cookie locale + header toggle)
 - ✅ Branded bilingual auth email templates (magic link, confirm signup, reset
-  password) in `docs/email/` — paste into Supabase once SMTP is set (§2)
+  password) live in Supabase, verified with a real delivered sign-in email (§2)
 - ✅ Contact address `admin@shiftedth.com` wired into footer + legal/privacy pages
-- ✅ Transactional email notifications (new applicant / status / message) wired —
-  no-op until app SMTP env is set (§2b)
+- ✅ App transactional email (new applicant / status / message) has real SMTP
+  creds set — not yet exercised by real activity (§2b)
 - ✅ Mobile navigation menu (phone-first market) — nav + messages + view toggle
 - ✅ Rate limits on apply / message / job-post (abuse guard, fail-open)
 - ✅ Seed candidate PII removed; platform starts clean for real signups
+- ✅ `profiles.is_admin` guarded against self-escalation (migration 0030) — was
+  a real hole (any authenticated user could self-promote to admin and inherit
+  every `is_admin()`-gated policy: payments, verification, moderation, Trust
+  Circle reads); found by audit, fixed, verified closed
+- ✅ CI (typecheck + moderation/matching tests + build) on every push/PR to `main`
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
-- Add app SMTP env (§2b) to switch on transactional notifications — the loop is
-  pull-only without them.
-- Add Stripe keys (§5) to charge for boosts; then design-partner the
-  Starter/Growth subscriptions before turning those live.
+- Swap the Stripe key to `sk_live_…` (§5) to actually charge for boosts; then
+  design-partner the Starter/Growth subscriptions before turning those live.
+- Set up ESLint (currently unconfigured — `npm run lint` doesn't check
+  anything) and re-seed a throwaway second test candidate so
+  `npm run test:trust-circle` can run again (both flagged by the platform
+  audit that also found the `is_admin` hole above).

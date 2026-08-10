@@ -38,7 +38,7 @@ async function requireEmployer() {
 }
 
 export async function updateEmployerProfile(formData: FormData) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, user } = await requireEmployer();
 
   await supabase
     .from("employer_profiles")
@@ -97,7 +97,7 @@ export async function createJob(formData: FormData) {
 
 /** Publish / close an existing job. */
 export async function setJobStatus(jobId: string, status: "published" | "closed" | "draft") {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, orgId } = await requireEmployer();
   await supabase
     .from("jobs")
     .update({
@@ -114,7 +114,7 @@ export async function setJobStatus(jobId: string, status: "published" | "closed"
 
 /** Start an engagement (hire) for a worker on one of the employer's jobs. */
 export async function startEngagement(jobId: string, workerId: string) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, orgId } = await requireEmployer();
   const { data: job } = await supabase
     .from("jobs")
     .select("title")
@@ -158,7 +158,7 @@ export async function startEngagement(jobId: string, workerId: string) {
 
 /** Log a retention milestone (worker stayed to day 30/60/90) → outcome event. */
 export async function logRetention(engagementId: string, type: string) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, orgId } = await requireEmployer();
   if (!OUTCOME_PRICING[type]) return;
   const { data: eng } = await supabase
     .from("engagements")
@@ -183,7 +183,7 @@ export async function logRetention(engagementId: string, type: string) {
 
 /** Set attendance signal on an engagement (form action: reads `attendance`). */
 export async function setEngagementAttendance(engagementId: string, formData: FormData) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, orgId } = await requireEmployer();
   await supabase
     .from("engagements")
     .update({ attendance: String(formData.get("attendance") ?? "pending") })
@@ -256,7 +256,7 @@ export async function reviewWorker(
   workerId: string,
   formData: FormData,
 ) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, user } = await requireEmployer();
   const rating = Math.max(1, Math.min(5, Number(formData.get("rating") ?? 0)));
   // Moderate the free-text comment before it's stored (Thai-law + policy gates).
   const mod = await moderateComment(
@@ -286,7 +286,7 @@ export async function verifyWorkerSkill(
   workerId: string,
   skillId: string,
 ) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, user } = await requireEmployer();
   await supabase.from("worker_skills").upsert(
     {
       worker_id: workerId,
@@ -303,7 +303,7 @@ export async function verifyWorkerSkill(
 
 /** Remove an endorsement (in case of a mistap). */
 export async function unverifyWorkerSkill(workerId: string, skillId: string) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, user } = await requireEmployer();
   await supabase
     .from("worker_skills")
     .delete()
@@ -319,7 +319,7 @@ export async function submitReference(
   workerId: string,
   formData: FormData,
 ) {
-  const { supabase, user, orgId } = await requireEmployer();
+  const { supabase, orgId } = await requireEmployer();
   const reliability = Math.max(1, Math.min(5, Number(formData.get("reliability") ?? 0)));
   await supabase.from("hire_references").upsert(
     {

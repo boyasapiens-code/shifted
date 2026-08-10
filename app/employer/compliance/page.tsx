@@ -5,7 +5,6 @@ import { Badge, Container, buttonClass } from "@/components/ui";
 import { ComplianceBadge } from "@/components/ComplianceBadge";
 import { requireEmployer } from "@/lib/auth";
 import {
-  COMPLIANCE_GROUPS,
   COMPLIANCE_CALENDAR,
   COMPLIANCE_RATES,
   COMPLIANCE_VERIFIED_ON,
