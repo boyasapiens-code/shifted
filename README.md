@@ -196,13 +196,10 @@ Two-way, verified reputation gated to real work ([`0005_reputation.sql`](supabas
 ## Roadmap (from the brief)
 
 - Unified account + Worker/Employer toggle (one account, both sides)
-- In-app messaging (matched parties)
 - Short video/voice profile intro
-- Employer monetization stubs (boost / featured + plan gate)
 - Secure résumé sharing with employers (post-verification)
 - Saved jobs + interview scheduling
 - LINE login
-- Employer verification workflow + admin console
 - Community (salary benchmarks, hiring guides)
 
 ---

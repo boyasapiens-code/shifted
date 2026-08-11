@@ -139,12 +139,20 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   Circle reads); found by audit, fixed, verified closed
 - ✅ CI (typecheck + moderation/matching tests + build) on every push/PR to `main`
 - ✅ Google OAuth login wired up and verified end to end (§3)
+- ✅ Verification submit/resubmit now shows a confirmation banner — previously
+  the page redirected with `?submitted=<level>` after a successful (re)submit
+  but rendered nothing for it, so submitting looked like it silently did
+  nothing even though it worked; fixed on both `/candidate/verification` and
+  `/employer/verification`
+- ✅ ESLint actually configured (`eslint.config.mjs`) and a throwaway
+  trust-circle test fixture re-seeded — `npm run lint` and
+  `npm run test:trust-circle` (11/11) both run clean again (both were flagged
+  by the platform audit that found the `is_admin` hole)
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
 - Swap the Stripe key to `sk_live_…` (§5) to actually charge for boosts; then
   design-partner the Starter/Growth subscriptions before turning those live.
-- Set up ESLint (currently unconfigured — `npm run lint` doesn't check
-  anything) and re-seed a throwaway second test candidate so
-  `npm run test:trust-circle` can run again (both flagged by the platform
-  audit that also found the `is_admin` hole above).
+- Wire `npm run test:moderation` / `test:matching` / `test:trust-circle` into
+  whatever actually gates a deploy (today CI runs them but doesn't block
+  Vercel's independent auto-deploy — see platform audit, 2026-08-11).

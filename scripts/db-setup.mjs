@@ -3,7 +3,7 @@
 // Applies the grant migration and verifies the API roles can reach the schema.
 // Reads SUPABASE_DB_* from .env.local. Safe to re-run.
 import pg from "pg";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
