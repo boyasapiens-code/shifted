@@ -102,7 +102,7 @@ export default async function EmployerVerificationPage({
 
                   {submitted === String(ly.level) && (
                     <p className="mt-3 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
-                      ✓ Submitted for review — we'll email you when it's checked.
+                      ✓ Submitted for review — we will email you once it is checked.
                     </p>
                   )}
 
