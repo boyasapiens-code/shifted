@@ -53,12 +53,14 @@ any time: `node scripts/test-email.mjs`.
 > manually return. This is the single highest-leverage activation lever.
 > Templates: `lib/email/templates.ts`; senders: `lib/notify.ts`.
 
-## 3. Google login (optional)
-- Google Cloud Console → Credentials → OAuth client (Web):
-  - JS origins: `https://shiftedth.com`, `https://www.shiftedth.com`
-  - Redirect URI: `https://zradcsybgyqkmhescava.supabase.co/auth/v1/callback`
-- Supabase → Authentication → Providers → **Google** → enable → paste Client
-  ID + Secret.
+## 3. Google login ✅ done
+Google Cloud project + OAuth consent screen (External) + Web OAuth client
+created; Client ID + Secret wired into Supabase → Authentication → Providers
+→ **Google**. Verified end to end: "Continue with Google" on
+`shiftedth.com/login` reaches Google's real account-chooser screen with the
+correct `client_id` — no `invalid_client` error.
+- JS origins: `https://shiftedth.com`, `https://www.shiftedth.com`
+- Redirect URI: `https://zradcsybgyqkmhescava.supabase.co/auth/v1/callback`
 
 ## 4. Verification reviewer
 The `boyasapiens@gmail.com` account is an admin (`profiles.is_admin = true`) and
@@ -136,6 +138,7 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   every `is_admin()`-gated policy: payments, verification, moderation, Trust
   Circle reads); found by audit, fixed, verified closed
 - ✅ CI (typecheck + moderation/matching tests + build) on every push/PR to `main`
+- ✅ Google OAuth login wired up and verified end to end (§3)
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
