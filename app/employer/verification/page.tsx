@@ -17,9 +17,9 @@ export const metadata: Metadata = { title: "Get verified" };
 export default async function EmployerVerificationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; submitted?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, submitted } = await searchParams;
   const { supabase, user } = await requireEmployer("/employer/verification");
 
   const { data: employer } = await supabase
@@ -99,6 +99,12 @@ export default async function EmployerVerificationPage({
                       </Badge>
                     )}
                   </div>
+
+                  {submitted === String(ly.level) && (
+                    <p className="mt-3 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
+                      ✓ Submitted for review — we'll email you when it's checked.
+                    </p>
+                  )}
 
                   {sub?.status === "rejected" && sub.review_note && (
                     <p className="mt-3 rounded-[var(--radius-base)] bg-red-50 px-3 py-2 text-sm text-red-700">

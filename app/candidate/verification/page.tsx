@@ -17,7 +17,7 @@ export default async function VerificationPage({
 }: {
   searchParams: Promise<{ submitted?: string; error?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, submitted } = await searchParams;
   const { supabase, user } = await requireWorker("/candidate/verification");
 
   const { data: candidate } = await supabase
@@ -97,6 +97,12 @@ export default async function VerificationPage({
                       </Badge>
                     )}
                   </div>
+
+                  {submitted === String(lv.level) && (
+                    <p className="mt-3 rounded-[var(--radius-base)] bg-stone-100 px-3 py-2 text-sm text-ink">
+                      ✓ Submitted for review — we'll email you when it's checked.
+                    </p>
+                  )}
 
                   {sub?.status === "rejected" && sub.review_note && (
                     <p className="mt-3 rounded-[var(--radius-base)] bg-red-50 px-3 py-2 text-sm text-red-700">
