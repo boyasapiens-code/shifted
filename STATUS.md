@@ -34,6 +34,10 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
 - Real end-to-end check of transactional emails once there's real activity.
 - Strategic: liquidity — more real job postings, direct employer outreach.
 
+## Last deploy check
+- Commit `dddb69d` ("Add STATUS.md and NOTES.md for session continuity") —
+  CI: success (1m28s). Vercel: success, deployed. Checked 2026-08-12.
+
 ## Watch for
 - Other Claude Code sessions may be operating on this repo concurrently and
   can push conflicting decisions without coordination (happened twice
