@@ -81,6 +81,7 @@ export default async function AdminMetricsPage() {
               <a href="/admin/verifications" className="hover:underline">Verifications</a>
               <a href="/admin/moderation" className="hover:underline">Moderation</a>
               <a href="/admin/data-requests" className="hover:underline">Data requests</a>
+              <a href="/admin/content" className="hover:underline">Content</a>
             </nav>
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">

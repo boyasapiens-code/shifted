@@ -1,5 +1,4 @@
-import matter from "gray-matter";
-import { RIGHTS_FILES } from "@/lib/generated/content";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export type RightsLang = "en" | "th";
 export const RIGHTS_LANGS: RightsLang[] = ["en", "th"];
@@ -222,115 +221,119 @@ export interface RightsArticle {
   };
 }
 
-// Heading → canonical section key, matched in both languages so a Thai article
-// can use Thai H2s. Compared lower-cased and trimmed.
-const SECTION_HEADINGS: Record<string, "quick" | "law" | "both" | "myths" | "good"> = {
-  "the quick version": "quick",
-  "สรุปสั้น ๆ": "quick",
-  "สรุปสั้นๆ": "quick",
-  "what the law says": "law",
-  "กฎหมายว่าอย่างไร": "law",
-  "both sides": "both",
-  "ทั้งสองฝ่าย": "both",
-  "myths & gray areas": "myths",
-  "ความเข้าใจผิดและจุดที่คลุมเครือ": "myths",
-  "what good looks like": "good",
-  "แนวทางที่ดีควรเป็นอย่างไร": "good",
+// DB row shape (rights_articles, migration 0033) — sections are already
+// split into columns (the migration script did the same H2/H3-splitting
+// that used to happen in parseSections() at read time, once, up front),
+// so no Markdown parsing happens here at all anymore. Exported (with `id`)
+// so /admin/content can query+edit the raw row directly.
+export type RightsRow = {
+  id: string;
+  slug: string;
+  lang: string;
+  title: string;
+  summary: string;
+  category: string;
+  audience: string;
+  last_reviewed: string | null;
+  review_cadence: string;
+  status: string;
+  related: string[];
+  keywords: string[];
+  sources: RightsSource[];
+  disclaimer: boolean;
+  section_quick: string;
+  section_law: string;
+  section_employees: string;
+  section_employers: string;
+  section_myths: string;
+  section_good: string;
 };
 
-function parseSections(body: string) {
-  const out: Record<string, string> = {};
-  let current = "";
-  const buf: string[] = [];
-  const flush = () => {
-    if (current) out[current] = buf.splice(0).join("\n").trim();
-    else buf.splice(0);
-  };
-  for (const line of body.split("\n")) {
-    const h2 = line.match(/^##\s+(.+)/);
-    if (h2) {
-      flush();
-      const key = SECTION_HEADINGS[h2[1].trim().toLowerCase()] ?? h2[1].trim().toLowerCase();
-      current = key;
-    } else {
-      buf.push(line);
-    }
-  }
-  flush();
-
-  // "Both sides" splits into For employees / For employers via ### headings
-  // (English "employee"/"employer" or Thai "ลูกจ้าง"/"นายจ้าง").
-  let employees = "";
-  let employers = "";
-  const both = out["both"] ?? "";
-  for (const part of both.split(/^###\s+/m)) {
-    const nl = part.indexOf("\n");
-    if (nl < 0) continue;
-    const head = part.slice(0, nl).trim().toLowerCase();
-    const content = part.slice(nl + 1).trim();
-    if (head.includes("employee") || head.includes("ลูกจ้าง")) employees = content;
-    else if (head.includes("employer") || head.includes("นายจ้าง")) employers = content;
-  }
-
-  return {
-    quick: out["quick"] ?? "",
-    law: out["law"] ?? "",
-    employees,
-    employers,
-    myths: out["myths"] ?? "",
-    good: out["good"] ?? "",
-  };
-}
-
-/** Which languages a given article slug has files for (en is canonical). */
-export function articleLangs(slug: string): RightsLang[] {
-  return RIGHTS_LANGS.filter((l) => Boolean(RIGHTS_FILES[l]?.[slug]));
-}
-
-function loadFile(slug: string, lang: RightsLang = "en"): RightsArticle {
-  // Fall back to English if the requested language isn't translated yet.
-  const effectiveLang: RightsLang = RIGHTS_FILES[lang]?.[slug] ? lang : "en";
-  const raw = RIGHTS_FILES[effectiveLang]?.[slug];
-  if (!raw) throw new Error(`Rights article "${slug}" not found for lang "${effectiveLang}".`);
-  const { data, content } = matter(raw);
+function toArticle(row: RightsRow, langs: RightsLang[]): RightsArticle {
   const article: RightsArticle = {
-    slug: data.slug ?? slug,
-    title: data.title ?? slug,
-    summary: data.summary ?? "",
-    category: data.category ?? "pay-and-money",
-    audience: data.audience ?? "both",
-    lang: effectiveLang,
-    last_reviewed: data.last_reviewed ? String(data.last_reviewed) : "",
-    review_cadence: data.review_cadence ?? "quarterly",
-    status: data.status ?? "draft",
-    related: data.related ?? [],
-    keywords: data.seo?.keywords ?? [],
-    sources: data.sources ?? [],
-    langs: articleLangs(slug),
-    sections: parseSections(content),
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary,
+    category: row.category,
+    audience: row.audience as RightsArticle["audience"],
+    lang: row.lang as RightsLang,
+    last_reviewed: row.last_reviewed ?? "",
+    review_cadence: row.review_cadence,
+    status: row.status,
+    related: row.related,
+    keywords: row.keywords,
+    sources: row.sources,
+    langs,
+    sections: {
+      quick: row.section_quick,
+      law: row.section_law,
+      employees: row.section_employees,
+      employers: row.section_employers,
+      myths: row.section_myths,
+      good: row.section_good,
+    },
   };
 
   // Guardrail: a published article MUST have sources, a review date, disclaimer.
+  // Now enforced live (on read) instead of at build time — an admin
+  // publishing an incomplete article finds out immediately, not on the next
+  // deploy.
   if (article.status === "published") {
-    if (!article.sources.length || !article.last_reviewed || data.disclaimer !== true) {
+    if (!article.sources.length || !article.last_reviewed || !row.disclaimer) {
       throw new Error(
-        `Rights article "${slug}" is published but missing sources, last_reviewed, or disclaimer.`,
+        `Rights article "${row.slug}" is published but missing sources, last_reviewed, or disclaimer.`,
       );
     }
   }
   return article;
 }
 
-export function getAllRightsArticles(lang: RightsLang = "en"): RightsArticle[] {
-  const slugs = Object.keys(RIGHTS_FILES.en ?? {}); // en is the canonical set of slugs
-  return slugs
-    .map((slug) => loadFile(slug, lang))
-    .filter((a) => a.status !== "draft");
+/** Which languages a given article slug has rows for (en is canonical). */
+export async function articleLangs(slug: string): Promise<RightsLang[]> {
+  const supabase = createPublicClient();
+  const { data } = await supabase.from("rights_articles").select("lang").eq("slug", slug);
+  return RIGHTS_LANGS.filter((l) => (data ?? []).some((r) => r.lang === l));
 }
 
-export function getRightsArticle(slug: string, lang: RightsLang = "en"): RightsArticle | null {
+async function loadRow(slug: string, lang: RightsLang = "en"): Promise<RightsArticle> {
+  const supabase = createPublicClient();
+  // Fall back to English if the requested language isn't translated yet.
+  let effectiveLang: RightsLang = lang;
+  let { data: row } = await supabase
+    .from("rights_articles")
+    .select("*")
+    .eq("slug", slug)
+    .eq("lang", lang)
+    .maybeSingle();
+  if (!row && lang !== "en") {
+    effectiveLang = "en";
+    ({ data: row } = await supabase
+      .from("rights_articles")
+      .select("*")
+      .eq("slug", slug)
+      .eq("lang", "en")
+      .maybeSingle());
+  }
+  if (!row) throw new Error(`Rights article "${slug}" not found for lang "${effectiveLang}".`);
+  const langs = await articleLangs(slug);
+  return toArticle(row as RightsRow, langs);
+}
+
+export async function getAllRightsArticles(lang: RightsLang = "en"): Promise<RightsArticle[]> {
+  const supabase = createPublicClient();
+  // en is the canonical set of slugs — every article has (at least) an en row.
+  const { data: enRows } = await supabase.from("rights_articles").select("slug").eq("lang", "en");
+  const slugs = (enRows ?? []).map((r) => r.slug);
+  const articles = await Promise.all(slugs.map((slug) => loadRow(slug, lang)));
+  return articles.filter((a) => a.status !== "draft");
+}
+
+export async function getRightsArticle(
+  slug: string,
+  lang: RightsLang = "en",
+): Promise<RightsArticle | null> {
   try {
-    const a = loadFile(slug, lang);
+    const a = await loadRow(slug, lang);
     return a.status === "draft" ? null : a;
   } catch {
     return null;

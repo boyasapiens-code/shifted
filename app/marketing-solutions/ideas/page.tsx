@@ -22,7 +22,7 @@ export default async function IdeasIndexPage({
   searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const { category, q } = await searchParams;
-  let ideas = getAllIdeas();
+  let ideas = await getAllIdeas();
   if (category) ideas = ideas.filter((i) => i.category === category);
   if (q) {
     const t = q.toLowerCase();

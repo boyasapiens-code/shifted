@@ -63,7 +63,7 @@ export default async function RightsCategoryPage({
 
   const label = categoryLabel(cat, lang);
   const qs = lang === "th" ? "?lang=th" : "";
-  const articles = getAllRightsArticles(lang).filter((a) => a.category === category);
+  const articles = (await getAllRightsArticles(lang)).filter((a) => a.category === category);
 
   return (
     <>

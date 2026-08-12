@@ -22,7 +22,7 @@ export default async function SpotlightsIndexPage({
   searchParams: Promise<{ category?: string; submitted?: string }>;
 }) {
   const { category, submitted } = await searchParams;
-  let spotlights = getAllSpotlights();
+  let spotlights = await getAllSpotlights();
   if (category) spotlights = spotlights.filter((s) => s.category === category);
 
   return (

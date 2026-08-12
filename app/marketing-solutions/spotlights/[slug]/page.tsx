@@ -12,8 +12,9 @@ import { SITE_URL } from "@/lib/site";
 const MS = "/marketing-solutions";
 const catLabel = (v: string) => SPOTLIGHT_CATEGORIES.find((c) => c.value === v)?.label ?? v;
 
-export function generateStaticParams() {
-  return getAllSpotlights().map((s) => ({ slug: s.slug }));
+export async function generateStaticParams() {
+  const spotlights = await getAllSpotlights();
+  return spotlights.map((s) => ({ slug: s.slug }));
 }
 
 export async function generateMetadata({
@@ -22,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const s = loadSpotlight(slug);
+  const s = await loadSpotlight(slug);
   if (!s) return { title: "Business Spotlights" };
   return {
     title: s.seo.metaTitle ?? `${s.businessName} — Spotlight | SHIFTED`,
@@ -33,7 +34,7 @@ export async function generateMetadata({
 
 export default async function SpotlightPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const s = loadSpotlight(slug);
+  const s = await loadSpotlight(slug);
   if (!s) notFound();
 
   // "They're hiring" — live roles, if this business is linked to a SHIFTED employer.

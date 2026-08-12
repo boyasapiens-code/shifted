@@ -73,7 +73,7 @@ export default async function RightsHubPage({
   const t = RIGHTS_COPY[lang];
 
   // Newest first — it's a publication, not a directory.
-  const all = getAllRightsArticles(lang).sort((a, b) =>
+  const all = (await getAllRightsArticles(lang)).sort((a, b) =>
     b.last_reviewed.localeCompare(a.last_reviewed),
   );
 

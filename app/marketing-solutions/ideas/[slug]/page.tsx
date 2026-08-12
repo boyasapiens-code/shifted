@@ -11,8 +11,9 @@ import { SITE_URL } from "@/lib/site";
 
 const MS = "/marketing-solutions";
 
-export function generateStaticParams() {
-  return getAllIdeas().map((i) => ({ slug: i.slug }));
+export async function generateStaticParams() {
+  const ideas = await getAllIdeas();
+  return ideas.map((i) => ({ slug: i.slug }));
 }
 
 export async function generateMetadata({
@@ -21,7 +22,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const a = loadIdea(slug);
+  const a = await loadIdea(slug);
   if (!a) return { title: "Ideas by SHIFTED" };
   return {
     title: a.seo.metaTitle ?? `${a.title} — SHIFTED`,
@@ -33,10 +34,10 @@ export async function generateMetadata({
 
 export default async function IdeaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = loadIdea(slug);
+  const article = await loadIdea(slug);
   if (!article) notFound();
 
-  const related = getAllIdeas()
+  const related = (await getAllIdeas())
     .filter((i) => i.slug !== article.slug && i.category === article.category)
     .slice(0, 3);
   const url = `${SITE_URL}${MS}/ideas/${article.slug}`;

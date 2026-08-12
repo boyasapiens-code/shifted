@@ -22,8 +22,9 @@ import {
 } from "@/lib/rights";
 import { SITE_URL } from "@/lib/site";
 
-export function generateStaticParams() {
-  return getAllRightsArticles().map((a) => ({ category: a.category, slug: a.slug }));
+export async function generateStaticParams() {
+  const articles = await getAllRightsArticles();
+  return articles.map((a) => ({ category: a.category, slug: a.slug }));
 }
 
 export async function generateMetadata({
@@ -35,7 +36,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category, slug } = await params;
   const lang = toRightsLang((await searchParams).lang);
-  const a = getRightsArticle(slug, lang);
+  const a = await getRightsArticle(slug, lang);
   if (!a) return { title: RIGHTS_COPY[lang].eyebrow };
   const base = `${SITE_URL}/rights/${category}/${slug}`;
   return {
@@ -63,15 +64,15 @@ export default async function RightsArticlePage({
   const { category, slug } = await params;
   const lang = toRightsLang((await searchParams).lang);
   const t = RIGHTS_COPY[lang];
-  const article = getRightsArticle(slug, lang);
+  const article = await getRightsArticle(slug, lang);
   if (!article || article.category !== category) notFound();
 
   const cat = getRightsCategory(category);
   const catLabel = cat ? categoryLabel(cat, lang) : null;
   const qs = lang === "th" ? "?lang=th" : "";
-  const related = article.related
-    .map((s) => getRightsArticle(s, lang))
-    .filter((a): a is NonNullable<typeof a> => !!a);
+  const related = (
+    await Promise.all(article.related.map((s) => getRightsArticle(s, lang)))
+  ).filter((a): a is NonNullable<typeof a> => !!a);
 
   // JSON-LD: Article (uses the actual rendered language).
   const jsonLd = {

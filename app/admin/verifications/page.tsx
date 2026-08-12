@@ -107,6 +107,9 @@ export default async function AdminVerificationsPage() {
               <a href="/admin/marketing" className="text-sm font-medium text-signal hover:underline">
                 Marketing leads →
               </a>
+              <a href="/admin/content" className="text-sm font-medium text-signal hover:underline">
+                Content →
+              </a>
             </span>
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">

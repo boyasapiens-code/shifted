@@ -12,7 +12,7 @@ const STATIC = [
   "/talent-solutions", "/small-business", "/signup", "/login",
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const base = STATIC.map((p) => ({
     url: `${SITE_URL}${p}`,
@@ -26,19 +26,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "monthly" as const,
   }));
 
-  const articles = getAllRightsArticles().map((a) => ({
+  const [rightsArticles, allIdeas, allSpotlights] = await Promise.all([
+    getAllRightsArticles(),
+    getAllIdeas(),
+    getAllSpotlights(),
+  ]);
+
+  const articles = rightsArticles.map((a) => ({
     url: `${SITE_URL}/rights/${a.category}/${a.slug}`,
     lastModified: a.last_reviewed ? new Date(a.last_reviewed) : now,
     changeFrequency: "monthly" as const,
   }));
 
-  const ideas = getAllIdeas().map((i) => ({
+  const ideas = allIdeas.map((i) => ({
     url: `${SITE_URL}/marketing-solutions/ideas/${i.slug}`,
     lastModified: i.publishedAt ? new Date(i.publishedAt) : now,
     changeFrequency: "monthly" as const,
   }));
 
-  const spotlights = getAllSpotlights().map((s) => ({
+  const spotlights = allSpotlights.map((s) => ({
     url: `${SITE_URL}/marketing-solutions/spotlights/${s.slug}`,
     lastModified: s.publishedAt ? new Date(s.publishedAt) : now,
     changeFrequency: "monthly" as const,

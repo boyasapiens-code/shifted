@@ -103,6 +103,52 @@ fully closed. Phase 2 (Cloudflare account + scaffolding) needs the user to
 create a Cloudflare account and provision secrets — not something done
 autonomously.
 
+## Content CMS (2026-08-12) — replaces Markdown files with DB + admin UI
+Separate from the Cloudflare migration above (started from "Astro headless
+CMS?" → settled on "no new CMS/vendor — extend the existing Supabase app").
+Know Your Rights articles and Marketing Solutions (ideas/spotlights) used to
+live as `content/**/*.md` files, read via `fs` at build time
+(`scripts/generate-content.mjs`, added for Cloudflare Phase 1). Now:
+- New tables (migration `0033_content_cms.sql`): `rights_articles`,
+  `marketing_ideas`, `marketing_spotlights`. Public read gated on
+  `status <> 'draft'` (rights) / `published` (marketing) `or is_admin()`,
+  admin-only write — same shape as the `questions` bank (0025).
+- All `content/**/*.md` migrated in via a one-off idempotent script
+  (`scripts/migrate-content-to-db.mjs`, safe to re-run, doesn't touch the
+  source files) — 6 rights articles ×2 langs, 4 ideas, 2 spotlights.
+- `lib/rights.ts` / `lib/marketing-content.ts` now query Supabase (async)
+  instead of the generated file; `scripts/generate-content.mjs` and its
+  `predev`/`pretypecheck` wiring are removed — content is edited live, not
+  baked in at build time.
+- New `/admin/content` — list + create/edit/delete for all three content
+  types (`app/admin/content/**`, `components/admin/*Form.tsx`), gated by the
+  same `requireAdmin()` every other admin page uses. Saves call
+  `revalidatePath()` on every affected public URL (including the old
+  slug/category on rename, since `/rights/[category]/[slug]` and
+  `/marketing-solutions/{ideas,spotlights}/[slug]` are statically
+  prerendered — without this, an edit wouldn't show up until the next
+  deploy).
+- **Caught before shipping**: 0033's RLS policy for `rights_articles` was
+  `status = 'published'`, stricter than the app's real rule
+  (`status <> 'draft'` — legal-review articles are public too). Every
+  migrated article is `legal-review`, so this zeroed the rights hub. Fixed
+  in `0034_rights_public_read_legal_review.sql`, caught via local preview
+  before deploy. Also added `lib/supabase/public.ts` (cookie-free anon
+  client) — `generateStaticParams()` has no request scope, so the normal
+  cookie-aware server client throws there.
+- **Verified**: full `npm run build` clean (85 routes); rights hub (en+th),
+  one full article, marketing hub, one idea, one spotlight, and
+  `/sitemap.xml` all confirmed live against real migrated data in local
+  preview; all 7 `/admin/content*` routes confirmed auth-gated; every form
+  field name cross-checked 1:1 against both the DB schema and the server
+  action's `formData.get()` calls (zero mismatches); a synthetic
+  insert/update/delete cycle against the real DB, using the exact row
+  shapes the actions build, passed for all 3 tables.
+- **Not yet verified** (needs a real login, which I don't do myself): an
+  actual click-through of the `/admin/content` forms from an authenticated
+  admin session. Everything reachable without logging in has been checked;
+  this is the one remaining step and it's on you whenever convenient.
+
 ## Open follow-ups (see `docs/launch-checklist.md` "Before real users")
 - Thai lawyer review of `/legal` (national IDs collected, PDPA applies).
 - Swap Stripe key to `sk_live_…` to charge for real (boost + subscriptions

@@ -17,9 +17,8 @@ export const metadata: Metadata = {
 
 const MS = "/marketing-solutions";
 
-export default function MarketingHubPage() {
-  const ideas = getAllIdeas();
-  const spotlights = getAllSpotlights();
+export default async function MarketingHubPage() {
+  const [ideas, spotlights] = await Promise.all([getAllIdeas(), getAllSpotlights()]);
   const latest = ideas.slice(0, 3);
   const featured = spotlights.find((s) => s.featured) ?? spotlights[0];
 

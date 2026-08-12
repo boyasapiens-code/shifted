@@ -92,3 +92,23 @@ Reusable facts learned the hard way. One line each; append, don't restructure.
 - Vercel environment variables need a fresh deployment to take effect for
   serverless functions — adding/changing one in the dashboard doesn't
   retroactively apply to the already-built, currently-running deployment.
+- When moving content from files to a DB table gated by RLS, the RLS policy
+  must encode the exact same "is this visible" rule the app code already
+  used — not a rule that merely sounds equivalent. Shipped once: the app's
+  real rule for rights articles was `status <> 'draft'` (legal-review
+  articles ARE public, just without the full sourcing guardrail), but the
+  new policy was written as `status = 'published'` — stricter than the app,
+  so RLS silently zeroed every query before the app's own `!== 'draft'`
+  filter ever ran. Caught immediately via local preview (empty rights hub)
+  before it reached production — always load-test a new RLS policy against
+  the real, currently-in-use status/flag values, not just against a
+  hand-picked "published" row.
+- Next.js `generateStaticParams()` (and other build-time-only functions)
+  run with NO request scope at all — calling the cookie-aware Supabase
+  server client (`next/headers`' `cookies()` under the hood) from inside one
+  throws "cookies was called outside a request scope," even though the same
+  function works fine when called from a page body. Any data-fetching
+  function that might be called from `generateStaticParams` needs a
+  cookie-free client — added `lib/supabase/public.ts` (plain anon-key
+  client, no SSR cookie plumbing) for read paths that are genuinely public
+  and don't need per-user session context.
