@@ -31,6 +31,8 @@ jobs:
         run: npm run test:matching
 
       # The app degrades gracefully without secrets (placeholder Supabase creds),
-      # so the production build compiles in CI.
+      # so the production build compiles in CI. Uses build:next-only since the
+      # typecheck/moderation/matching steps above already ran (npm run build
+      # would repeat them — that's for Vercel, which doesn't run this workflow).
       - name: Build
-        run: npm run build
+        run: npm run build:next-only

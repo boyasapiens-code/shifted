@@ -157,11 +157,27 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   relative paths pass; `//`, `/\`, absolute URLs, and tab/newline-bypass
   variants are rejected. Verified: typecheck + build clean, sanitizer checked
   against 11 cases, deployed commit confirmed live on `shiftedth.com`
+- ✅ `npm run typecheck` / `test:moderation` / `test:matching` now gate
+  Vercel's deploy, not just GitHub Actions — `package.json`'s `build` script
+  (what Vercel runs by default) is `typecheck && test:moderation &&
+  test:matching && next build`, so a broken deterministic check fails the
+  Vercel build itself and the last-good production deployment stays live
+  instead of being replaced. `ci.yml`'s Build step now calls the new
+  `build:next-only` script to avoid re-running the same checks twice.
+  `test:trust-circle` is **not** included — it needs a live DB connection via
+  `SUPABASE_DB_*` creds read from `.env.local`, which don't exist in Vercel's
+  or GitHub Actions' build environment, and running it against the real
+  Supabase instance on every build/deploy isn't something to do without a
+  decision on it first (see follow-up below). Verified: full chain (`npm run
+  build`) passes clean on a cold `.next`, in the same order as CI.
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
 - Swap the Stripe key to `sk_live_…` (§5) to actually charge for boosts; then
   design-partner the Starter/Growth subscriptions before turning those live.
-- Wire `npm run test:moderation` / `test:matching` / `test:trust-circle` into
-  whatever actually gates a deploy (today CI runs them but doesn't block
-  Vercel's independent auto-deploy — see platform audit, 2026-08-11).
+- Decide how to gate on `test:trust-circle` (needs a live DB, so it can't run
+  inside Vercel's build like the other two — see note above). Two options,
+  neither done yet: (a) add `SUPABASE_DB_*` as GitHub Actions secrets and run
+  it there, plus branch protection requiring that check before `main` accepts
+  a push; or (b) accept it as a human-checked signal only. Both need an
+  explicit decision — (a) touches GitHub repo secrets/branch protection.
