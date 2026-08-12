@@ -158,6 +158,11 @@ live as `content/**/*.md` files, read via `fs` at build time
 - Strategic: liquidity — more real job postings, direct employer outreach.
 
 ## Last deploy check
+- Commit `ccbb37e` ("Replace Markdown content system with DB-backed CMS +
+  admin UI") — CI: success. Verified live on shiftedth.com: rights hub,
+  one full article (correct "In legal review" badge), marketing hub, one
+  idea, one spotlight, and sitemap.xml all serving real DB-backed content,
+  not a stale cache. Checked 2026-08-12.
 - Commit `ad87025` ("Cloudflare migration Phase 1: Workers-compatibility
   code changes") — CI: success (1m38s). Vercel: success, deployed.
   Checked 2026-08-12.
