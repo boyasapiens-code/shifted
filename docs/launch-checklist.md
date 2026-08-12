@@ -166,18 +166,20 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   `build:next-only` script to avoid re-running the same checks twice.
   `test:trust-circle` is **not** included — it needs a live DB connection via
   `SUPABASE_DB_*` creds read from `.env.local`, which don't exist in Vercel's
-  or GitHub Actions' build environment, and running it against the real
-  Supabase instance on every build/deploy isn't something to do without a
-  decision on it first (see follow-up below). Verified: full chain (`npm run
+  or GitHub Actions' build environment. Verified: full chain (`npm run
   build`) passes clean on a cold `.next`, in the same order as CI.
+- ✅ **Decided** (2026-08-12): `test:trust-circle` stays human-checked-only,
+  not wired into any automated gate. It needs a live DB, so it can't run
+  inside Vercel's build like the other two, and automating it would mean
+  either running tests against the real production Supabase instance on
+  every deploy, or adding `SUPABASE_DB_*` as GitHub Actions secrets plus
+  branch protection to actually enforce it — deliberately not doing either
+  for now. This matches what CLAUDE.md already mandates: any PR touching
+  `tc_*` must keep `npm run test:trust-circle` green, checked manually by
+  whoever's touching that code. Revisit if Trust Circle work picks up enough
+  that manual discipline stops being reliable.
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
 - Swap the Stripe key to `sk_live_…` (§5) to actually charge for boosts; then
   design-partner the Starter/Growth subscriptions before turning those live.
-- Decide how to gate on `test:trust-circle` (needs a live DB, so it can't run
-  inside Vercel's build like the other two — see note above). Two options,
-  neither done yet: (a) add `SUPABASE_DB_*` as GitHub Actions secrets and run
-  it there, plus branch protection requiring that check before `main` accepts
-  a push; or (b) accept it as a human-checked signal only. Both need an
-  explicit decision — (a) touches GitHub repo secrets/branch protection.
