@@ -168,16 +168,22 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   `SUPABASE_DB_*` creds read from `.env.local`, which don't exist in Vercel's
   or GitHub Actions' build environment. Verified: full chain (`npm run
   build`) passes clean on a cold `.next`, in the same order as CI.
-- ✅ **Decided** (2026-08-12): `test:trust-circle` stays human-checked-only,
-  not wired into any automated gate. It needs a live DB, so it can't run
-  inside Vercel's build like the other two, and automating it would mean
-  either running tests against the real production Supabase instance on
-  every deploy, or adding `SUPABASE_DB_*` as GitHub Actions secrets plus
-  branch protection to actually enforce it — deliberately not doing either
-  for now. This matches what CLAUDE.md already mandates: any PR touching
-  `tc_*` must keep `npm run test:trust-circle` green, checked manually by
-  whoever's touching that code. Revisit if Trust Circle work picks up enough
-  that manual discipline stops being reliable.
+- ✅ **Decided** (2026-08-12): `test:trust-circle` gates via a local git
+  `pre-push` hook (`.husky/pre-push`), not CI/branch-protection. It needs a
+  live DB, so it can't run inside Vercel's or GitHub Actions' build sandbox —
+  but rather than leave it purely human-checked (memory-dependent, exactly
+  the kind of drift the original audit flagged), the hook runs
+  `npm run test:trust-circle` automatically before any push that touches
+  Trust Circle surface (`app/candidate/trust-circle/`,
+  `app/employer/trust-circle/`, `app/account/privacy/export/route.ts`,
+  `supabase/migrations/0019_trust_circle.sql`, or any migration whose diff
+  mentions `tc_`), using the same local `.env.local` credentials already used
+  for manual runs — no new secrets in any third-party system, no branch
+  protection, unrelated pushes untouched. Conscious override:
+  `git push --no-verify`. Only protects pushes made from a machine with this
+  hook installed (`npm install` runs it via the `prepare` script); revisit if
+  a second contributor's machine needs covering, or if CI/branch-protection
+  becomes worth the added secrets surface.
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).

@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+# Trust Circle (tc_*) invariants are enforced as code, not policy — see
+# CLAUDE.md. "Any PR touching tc_* data must keep npm run test:trust-circle
+# green" is a stated rule, but nothing actually enforced it until now: CI runs
+# the suite but doesn't gate the push, and Vercel can't run it at all (needs a
+# live DB connection, not available in that build sandbox). This hook makes it
+# a real gate — locally, before a push touching Trust Circle surface ever
+# leaves this machine — without putting SUPABASE_SERVICE_ROLE_KEY into any
+# third-party CI system. Only runs when relevant files changed, so unrelated
+# pushes aren't slowed down or touch the live DB unnecessarily.
+#
+# Conscious override: git push --no-verify (skips this hook entirely).
+
+TC_PATH_PATTERN='app/candidate/trust-circle/|app/employer/trust-circle/|app/account/privacy/export/route\.ts|scripts/test-trust-circle\.mjs|supabase/migrations/0019_trust_circle\.sql'
+
+git fetch origin main --quiet 2>/dev/null
+
+CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null)
+
+TOUCHES_TC=0
+if echo "$CHANGED" | grep -qE "$TC_PATH_PATTERN"; then
+  TOUCHES_TC=1
+fi
+
+# Also catch a future migration that touches tc_* tables without matching the
+# naming convention above — content-based, not just filename-based.
+for f in $(echo "$CHANGED" | grep -E '^supabase/migrations/.*\.sql$'); do
+  if git diff origin/main...HEAD -- "$f" 2>/dev/null | grep -q 'tc_'; then
+    TOUCHES_TC=1
+  fi
+done
+
+if [ "$TOUCHES_TC" = "1" ]; then
+  echo "-> Trust Circle surface changed - running npm run test:trust-circle before push..."
+
+  if [ ! -f .env.local ]; then
+    echo ""
+    echo "x .env.local not found - can't verify the Trust Circle invariant suite."
+    echo "  Set up .env.local with SUPABASE_SERVICE_ROLE_KEY, or push with"
+    echo "  --no-verify if you're consciously skipping this check."
+    exit 1
+  fi
+
+  npm run test:trust-circle
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "x Trust Circle invariant suite failed - push blocked."
+    echo "  Fix the failure, or push with --no-verify to consciously override."
+    exit 1
+  fi
+fi
+
+exit 0
