@@ -58,20 +58,41 @@ export async function fulfillSubscriptionCheckout(
  * The webhook is the only writer to `plan` (employer_profiles_guard_plan
  * blocks everyone else), so any lifecycle change — including a lapsed or
  * canceled subscription — has to flow through here or `plan` goes stale.
- * Looks the employer up by stripe_subscription_id; a no-op if it's not one
- * of ours (already cleared, or an unrelated Stripe object).
+ *
+ * Resolves the employer by stripe_subscription_id first. Stripe doesn't
+ * guarantee webhook delivery order, so a subscription.updated/deleted event
+ * can in principle arrive before the checkout.session.completed that would
+ * have linked stripe_subscription_id — found by audit. If so, fall back to
+ * stripe_customer_id (present on a re-subscribing employer from a prior
+ * checkout; still a no-op for a brand-new employer's very first
+ * subscription, since neither id is on file yet in that exact race). A true
+ * no-op means it's genuinely not one of ours, or was already cleared.
  */
 export async function syncSubscriptionStatus(
   subscriptionId: string,
   status: string,
   canceled: boolean,
+  customerId?: string,
 ) {
   const admin = createAdminClient();
-  const { data: employer } = await admin
-    .from("employer_profiles")
-    .select("id")
-    .eq("stripe_subscription_id", subscriptionId)
-    .maybeSingle();
+  let employer = (
+    await admin
+      .from("employer_profiles")
+      .select("id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle()
+  ).data;
+
+  if (!employer && customerId) {
+    employer = (
+      await admin
+        .from("employer_profiles")
+        .select("id")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle()
+    ).data;
+  }
+
   if (!employer) return;
 
   const lapsed =
@@ -81,8 +102,13 @@ export async function syncSubscriptionStatus(
     .from("employer_profiles")
     .update(
       lapsed
-        ? { plan: "free", featured: false, subscription_status: status }
-        : { subscription_status: status },
+        ? {
+            plan: "free",
+            featured: false,
+            subscription_status: status,
+            stripe_subscription_id: null,
+          }
+        : { subscription_status: status, stripe_subscription_id: subscriptionId },
     )
     .eq("id", employer.id);
 }

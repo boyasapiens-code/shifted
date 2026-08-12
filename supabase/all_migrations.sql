@@ -1,5 +1,11 @@
--- SHIFTED — full schema (migrations 0001–0017)
+-- SHIFTED — full schema (migrations 0001–0032)
+-- Regenerated 2026-08-12 — concatenation of supabase/migrations/*.sql in order.
+-- Reference only: production applies each file individually via scripts/db-apply.mjs.
 
+
+-- ============================================================
+-- 0001_init.sql
+-- ============================================================
 -- SHIFTED — initial schema
 -- Vetted talent network for Hospitality, Retail & Lifestyle (Thailand).
 --
@@ -287,7 +293,9 @@ create policy "saved_jobs: manage own"
   on saved_jobs for all using (auth.uid() = candidate_id)
   with check (auth.uid() = candidate_id);
 
-
+-- ============================================================
+-- 0002_storage.sql
+-- ============================================================
 -- SHIFTED — storage buckets for profile & company media.
 -- Run after 0001_init.sql.
 --
@@ -346,7 +354,9 @@ create policy "resumes owner all"
     bucket_id = 'resumes' and (storage.foldername(name))[1] = auth.uid()::text
   );
 
-
+-- ============================================================
+-- 0003_staff.sql
+-- ============================================================
 -- SHIFTED — staff records.
 -- Employer-owned staff/payroll records (the people an employer already employs),
 -- distinct from candidate accounts. Foundation for the Payroll / HR roadmap.
@@ -380,7 +390,9 @@ create policy "staff: manage own"
   using (auth.uid() = employer_id)
   with check (auth.uid() = employer_id);
 
-
+-- ============================================================
+-- 0004_grants.sql
+-- ============================================================
 -- SHIFTED — grant the Supabase API roles access to the public schema.
 -- Needed on projects where default privileges weren't applied to the API roles
 -- (observed with the new sb_publishable_/sb_secret_ key system): without this,
@@ -403,7 +415,9 @@ alter default privileges in schema public
 alter default privileges in schema public
   grant all on functions to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0005_reputation.sql
+-- ============================================================
 -- SHIFTED — reputation core: engagements + two-way reviews + reliability.
 -- The moat: verified work history and ratings gated to real completed work.
 -- Run after 0001–0004.
@@ -598,7 +612,9 @@ create policy "reviews: author update own"
 grant all on engagements to anon, authenticated, service_role;
 grant all on reviews      to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0006_unified_account.sql
+-- ============================================================
 -- SHIFTED — unified account.
 -- One account can hold BOTH a candidate (worker) and an employer profile.
 -- `active_view` remembers which side the toggle is on; capability is derived
@@ -616,7 +632,9 @@ set active_view = case when role = 'employer' then 'employer'::account_view
                        else 'worker'::account_view end
 where active_view is null and role is not null;
 
-
+-- ============================================================
+-- 0007_verification.sql
+-- ============================================================
 -- SHIFTED — 4-level verified screening (the core differentiator).
 -- Candidates progress through 4 sequential levels; an admin reviews each.
 -- A visible verification_level (0–4) reflects the highest *contiguous* approved
@@ -737,7 +755,9 @@ create policy "verification owner update"
     bucket_id = 'verification' and (storage.foldername(name))[1] = auth.uid()::text
   );
 
-
+-- ============================================================
+-- 0008_employer_verification.sql
+-- ============================================================
 -- SHIFTED — 4-layer EMPLOYER verification (both sides get vetted).
 -- Mirrors the candidate system: employers earn a trust badge (0–4) by passing
 -- Legal → Online → Customer reviews → Peer/partner layers. Workers can filter
@@ -817,7 +837,9 @@ create policy "evs: admin all"
 
 grant all on employer_verification_submissions to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0009_references.sql
+-- ============================================================
 -- SHIFTED — shared reference network.
 -- Employers leave structured references on workers they actually engaged
 -- (reliability, would-rehire, no-show, conduct). Visible to other employers as
@@ -905,7 +927,9 @@ create policy "refs: author update own"
 
 grant all on hire_references to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0010_messaging.sql
+-- ============================================================
 -- SHIFTED — in-app messaging.
 -- One conversation per employer↔worker pair, openable only once a real
 -- relationship exists (an application to the employer's job, or an engagement).
@@ -1009,7 +1033,9 @@ create policy "messages: member send"
 grant all on conversations to anon, authenticated, service_role;
 grant all on messages      to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0011_monetization.sql
+-- ============================================================
 -- SHIFTED — monetization stubs.
 -- Free for workers; employers pay for reach. Billing is STUBBED — these model
 -- the surfaces (plan, boosted jobs, featured employers) so the flows work end
@@ -1026,7 +1052,9 @@ alter table jobs add column boosted_until timestamptz;
 
 create index jobs_boosted_idx on jobs (boosted_until desc nulls last);
 
-
+-- ============================================================
+-- 0012_skills.sql
+-- ============================================================
 -- SHIFTED — gamified skill ecosystem (Phase A): skill stacks + worker skills +
 -- one-tap employer verification (the linchpin). Run after 0001–0011.
 --
@@ -1128,7 +1156,9 @@ create policy "ws: admin all" on worker_skills for all using (is_admin()) with c
 grant all on skills        to anon, authenticated, service_role;
 grant all on worker_skills to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0013_verify_prompts.sql
+-- ============================================================
 -- SHIFTED — prompt-driven one-tap verification + employer accountability score.
 -- Completing an engagement generates verification prompts for milestone skills;
 -- the employer confirms/declines in one tap. Auto-verifiable skills are
@@ -1238,7 +1268,9 @@ create policy "vp: admin all"
 
 grant all on verification_prompts to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0014_archetypes.sql
+-- ============================================================
 -- SHIFTED — workforce archetypes (Phase B entry layer).
 -- A behavioral archetype derived from a short assessment; re-testable.
 -- Stored on the worker profile; the fit engine lives in app code (lib/archetypes).
@@ -1250,7 +1282,9 @@ alter table candidate_profiles add column archetype_taken_at timestamptz;
 
 create index candidate_profiles_archetype_idx on candidate_profiles (archetype);
 
-
+-- ============================================================
+-- 0015_outcomes.sql
+-- ============================================================
 -- SHIFTED — outcome-aligned pricing (the wedge vs Indeed's CPC) + post-hire
 -- retention milestones. Employers are billed on OUTCOMES (a confirmed hire, then
 -- the worker staying to 30/60/90 days), never per click. Billing stays stubbed
@@ -1292,14 +1326,18 @@ create policy "be: admin all"
 
 grant all on billing_events to anon, authenticated, service_role;
 
-
+-- ============================================================
+-- 0016_plan_tiers.sql
+-- ============================================================
 -- SHIFTED — add the Growth subscription tier (per CLAUDE.md: Free / Starter
 -- ฿990 / Growth ฿2,490). The existing 'pro' value is the Starter tier.
 -- Run after 0001–0015.
 
 alter type plan_tier add value if not exists 'growth';
 
-
+-- ============================================================
+-- 0017_reputation_v2.sql
+-- ============================================================
 -- SHIFTED — Worker Reputation System v1.
 -- Objective behaviour dominates; subjective stars are a minor input. Protect the
 -- scarce worker side: a low score reduces ranking and shows a recovery panel —
@@ -1405,10 +1443,9 @@ begin
   end loop;
 end $$;
 
-
-
-
--- ===== 0018_employer_compliance.sql =====
+-- ============================================================
+-- 0018_employer_compliance.sql
+-- ============================================================
 -- SHIFTED — employer hiring-compliance self-attestation.
 -- An employer works through the Thailand hiring document-trail checklist
 -- (RD / SSO / DLPW / DOE) and self-attests which obligations they meet. The
@@ -1431,8 +1468,9 @@ comment on column employer_profiles.compliance_items is
 comment on column employer_profiles.compliance_attested_at is
   'When the employer last confirmed their compliance self-attestation.';
 
-
--- ===== 0019_trust_circle.sql =====
+-- ============================================================
+-- 0019_trust_circle.sql
+-- ============================================================
 -- SHIFTED — TRUST CIRCLE (tc_*): premium employer-to-employer workforce
 -- referral network. From TRUST_CIRCLE_BUILD_SPEC.md. The spec's non-negotiable
 -- rules are enforced here as CODE (constraints + RLS + security-definer
@@ -1835,8 +1873,9 @@ grant execute on function
   tc_search(text), tc_view_endorsements(uuid)
 to authenticated, service_role;
 
-
--- ===== 0020_marketing_leads.sql =====
+-- ============================================================
+-- 0020_marketing_leads.sql
+-- ============================================================
 -- SHIFTED — Marketing Solutions (Booyah) lead capture + attribution.
 -- Revenue must stay attributable inside Shifted: capture the lead ON-PLATFORM
 -- before handing off to Booyah. Plus a lightweight event log (the repo has no
@@ -1894,8 +1933,9 @@ values
   ('Green Leaf Dispensary', 'Ari, Bangkok', 'cannabis_retail', 'Mook', 'phone: 08x-xxx-xxxx', 'diy',
    'Prefer to start with the Blueprint and DIY first.', 'new');
 
-
--- ===== 0021_moderation.sql =====
+-- ============================================================
+-- 0021_moderation.sql
+-- ============================================================
 -- SHIFTED — AI moderation engine (SHIFTED_AI_Moderation_Engine.md).
 -- Every decision is logged (legal defensibility + worker visibility). Anything
 -- attached to a worker's name is visible to that worker — no covert records.
@@ -1974,8 +2014,9 @@ grant update on moderation_decisions to authenticated, service_role;
 grant select, insert on content_reports to authenticated, service_role;
 grant update on content_reports to authenticated, service_role;
 
-
--- ===== 0022_matching.sql =====
+-- ============================================================
+-- 0022_matching.sql
+-- ============================================================
 -- SHIFTED — categorization & matching (SHIFTED_Categorization_Matching_Spec.md).
 -- Adds the structured, OPTIONAL taxonomy fields both sides can fill so matching
 -- is apples-to-apples. Everything is nullable — the matcher degrades gracefully
@@ -2024,8 +2065,9 @@ set experience_tier = case
   else 4 end
 where experience_tier is null;
 
-
--- ===== 0023_foundation.sql =====
+-- ============================================================
+-- 0023_foundation.sql
+-- ============================================================
 -- SHIFTED — foundation hardening: rate limiting + PDPA data-subject requests.
 -- Run after 0001–0022.
 
@@ -2074,8 +2116,9 @@ create policy "dr admin update" on data_requests for update using (is_admin()) w
 grant select, insert on data_requests to authenticated, service_role;
 grant update on data_requests to authenticated, service_role;
 
-
--- ===== 0024_rls_hardening.sql =====
+-- ============================================================
+-- 0024_rls_hardening.sql
+-- ============================================================
 -- SHIFTED — RLS hardening (from the security audit, docs/security-audit.md).
 -- Several SELECT policies were written `using (true)`, which applies to the
 -- logged-OUT `anon` role too — so worker PII and reputation data were readable
@@ -2110,8 +2153,9 @@ create policy "reviews: gated read" on reviews
     or (auth.uid() is not null and comment_status in ('allowed', 'softened'))
   );
 
-
--- ===== 0025_interview_questions.sql =====
+-- ============================================================
+-- 0025_interview_questions.sql
+-- ============================================================
 -- SHIFTED — custom interview question system (SHIFTED_Platform_Concept_BuildSpec §4.2).
 -- The origin feature. CLOSED-BANK ONLY: questions are Shifted-owned objects with
 -- fixed answer formats; employers assemble sets but never free-type questions,
@@ -2312,8 +2356,9 @@ insert into questions (role_scope, category, prompt, answer_format, options) val
   ('{store_manager}', 'situational', 'Two staff call in sick on a busy Saturday. First action?', 'single_select',
     '[{"value":"cover","label":"Work the floor & call backups","points":2},{"value":"reassign","label":"Reassign remaining staff","points":1},{"value":"wait","label":"Wait and see","points":0}]');
 
-
--- ===== 0026_organizations.sql =====
+-- ============================================================
+-- 0026_organizations.sql
+-- ============================================================
 -- SHIFTED — organization model (SHIFTED_Platform_Concept_BuildSpec §3, §5).
 -- An Employer organization (= employer_profiles) gains LOCATIONS and STAFF SEATS
 -- (Owner / Manager) so multiple people can act on one org. The owner is the user
@@ -2406,3 +2451,348 @@ insert into locations (employer_id, name, address, is_primary)
 select id, coalesce(company_name, 'Main location'), location, true
 from employer_profiles
 where not exists (select 1 from locations l where l.employer_id = employer_profiles.id);
+
+-- ============================================================
+-- 0027_admin_metrics.sql
+-- ============================================================
+-- ===========================================================================
+-- 0027 — Admin metrics
+-- ---------------------------------------------------------------------------
+-- A single security-definer function that returns marketplace-health numbers
+-- as one jsonb blob. CLAUDE.md asks us to instrument: active jobs, applies,
+-- hires, time-to-fill, repeat employers. This is the read side of that.
+--
+-- Why security-definer + an internal is_admin() gate (not raw table SELECT):
+-- admins have no broad cross-employer read policy on jobs/applications/
+-- engagements, and we don't want to add one. The function aggregates server
+-- side and returns only counts — never raw rows, never worker PII. It fails
+-- closed: a non-admin caller gets an exception, not an empty result.
+-- ===========================================================================
+
+create or replace function admin_metrics()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  result jsonb;
+begin
+  if not is_admin() then
+    raise exception 'admin_metrics: not authorized';
+  end if;
+
+  select jsonb_build_object(
+    'generated_at', now(),
+
+    -- Liquidity: supply (jobs) and demand (applies)
+    'jobs_active',      (select count(*) from jobs where status = 'published'),
+    'jobs_total',       (select count(*) from jobs),
+    'jobs_new_30d',     (select count(*) from jobs where created_at >= now() - interval '30 days'),
+    'applies_total',    (select count(*) from applications),
+    'applies_30d',      (select count(*) from applications where created_at >= now() - interval '30 days'),
+
+    -- Outcomes
+    'hires_total',      (select count(*) from applications where status = 'hired'),
+    'hires_30d',        (select count(*) from applications
+                          where status = 'hired' and updated_at >= now() - interval '30 days'),
+
+    -- Accounts
+    'employers_total',  (select count(*) from employer_profiles),
+    'candidates_total', (select count(*) from candidate_profiles),
+
+    -- Repeat employers: posted 2+ jobs ever (came back to use the platform)
+    'repeat_employers', (
+      select count(*) from (
+        select employer_id from jobs group by employer_id having count(*) >= 2
+      ) r
+    ),
+
+    -- Time-to-fill: per filled job, days from posting to its first hire.
+    -- Posting time = published_at, falling back to created_at. The hire moment
+    -- is approximated by the hired application's updated_at (last transition).
+    -- Reported as median + average over jobs that actually have a hire.
+    'time_to_fill_median_days', (
+      select round(percentile_cont(0.5) within group (order by ttf)::numeric, 1)
+      from (
+        select extract(epoch from (
+                 min(a.updated_at) - coalesce(j.published_at, j.created_at)
+               )) / 86400.0 as ttf
+        from applications a
+        join jobs j on j.id = a.job_id
+        where a.status = 'hired'
+        group by a.job_id, j.published_at, j.created_at
+      ) t
+      where ttf >= 0
+    ),
+    'time_to_fill_avg_days', (
+      select round(avg(ttf)::numeric, 1)
+      from (
+        select extract(epoch from (
+                 min(a.updated_at) - coalesce(j.published_at, j.created_at)
+               )) / 86400.0 as ttf
+        from applications a
+        join jobs j on j.id = a.job_id
+        where a.status = 'hired'
+        group by a.job_id, j.published_at, j.created_at
+      ) t
+      where ttf >= 0
+    ),
+    'jobs_filled', (
+      select count(distinct job_id) from applications where status = 'hired'
+    ),
+
+    -- Funnel: applications by status (applied → … → hired/rejected).
+    -- status is an enum — cast to text so it can be a jsonb object key.
+    'application_funnel', coalesce((
+      select jsonb_object_agg(status, n)
+      from (select status::text as status, count(*) n from applications group by status) s
+    ), '{}'::jsonb),
+
+    -- Supply by status (draft / published / closed)
+    'jobs_by_status', coalesce((
+      select jsonb_object_agg(status, n)
+      from (select status::text as status, count(*) n from jobs group by status) s
+    ), '{}'::jsonb)
+  ) into result;
+
+  return result;
+end;
+$$;
+
+-- Authenticated only; the function itself enforces is_admin(). Never anon.
+revoke all on function admin_metrics() from public;
+grant execute on function admin_metrics() to authenticated;
+
+-- ============================================================
+-- 0028_payments.sql
+-- ============================================================
+-- ===========================================================================
+-- 0028 — Payments (real charges for boosted listings)
+-- ---------------------------------------------------------------------------
+-- The Phase-1 revenue wedge (CLAUDE.md): boosting a job is now a real, paid
+-- action via Stripe-hosted Checkout. This adds the ledger + the paywall.
+--
+-- Security model — the boost must only be granted after money actually moves:
+--   * payments: employers can read + insert their OWN rows, but have NO update
+--     policy. Status only advances to 'paid' from the webhook (service_role,
+--     which bypasses RLS) — an employer can never mark their own payment paid.
+--   * jobs_guard_boost(): a trigger that lets ONLY service_role change a job's
+--     boosted_until. Without it, the jobs UPDATE policy would let an employer
+--     set their own boost for free. With it, the Stripe webhook is the single
+--     path to a live boost. Employers' normal job edits leave boosted_until
+--     untouched, so they pass the guard unaffected.
+-- ===========================================================================
+
+create type payment_status as enum ('pending', 'paid', 'failed', 'canceled');
+-- Extendable: add 'plan_starter' / 'plan_growth' when subscriptions go paid.
+create type payment_kind as enum ('boost');
+
+create table payments (
+  id                      uuid primary key default gen_random_uuid(),
+  employer_id             uuid not null references employer_profiles (id) on delete cascade,
+  kind                    payment_kind not null,
+  job_id                  uuid references jobs (id) on delete set null,
+  amount_thb              int not null,
+  currency                text not null default 'thb',
+  status                  payment_status not null default 'pending',
+  provider                text not null default 'stripe',
+  provider_session_id     text,   -- Stripe Checkout Session id (cs_...)
+  provider_payment_intent text,   -- Stripe PaymentIntent id (pi_...)
+  created_at              timestamptz not null default now(),
+  updated_at              timestamptz not null default now(),
+  paid_at                 timestamptz
+);
+
+create index payments_employer_idx on payments (employer_id, created_at desc);
+create unique index payments_session_idx
+  on payments (provider_session_id) where provider_session_id is not null;
+
+create trigger payments_set_updated_at
+  before update on payments
+  for each row execute function set_updated_at();
+
+alter table payments enable row level security;
+
+create policy "pay: employer read own"
+  on payments for select using (auth.uid() = employer_id);
+create policy "pay: employer insert own"
+  on payments for insert to authenticated with check (auth.uid() = employer_id);
+create policy "pay: admin all"
+  on payments for all using (is_admin()) with check (is_admin());
+-- Deliberately NO employer UPDATE policy — fulfilment is service_role only.
+
+grant all on payments to anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Paywall guard: only the payment webhook (service_role) may extend a boost.
+-- ---------------------------------------------------------------------------
+create or replace function jobs_guard_boost()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.boosted_until is distinct from old.boosted_until
+     and coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'boosted_until can only be changed by the payment webhook';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger jobs_guard_boost_trg
+  before update on jobs
+  for each row execute function jobs_guard_boost();
+
+-- ============================================================
+-- 0029_has_unread.sql
+-- ============================================================
+-- ===========================================================================
+-- 0029 — has_unread_messages()
+-- ---------------------------------------------------------------------------
+-- The site header previously SELECTed every one of a user's conversation rows
+-- on each render just to compute one boolean (is anything unread?). Replace
+-- that with a single security-definer EXISTS. It only ever reveals the CALLER's
+-- own unread state (filtered by auth.uid()), so it returns a bare boolean and
+-- leaks nothing.
+-- ===========================================================================
+
+create or replace function has_unread_messages()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from conversations c
+    where (c.employer_id = auth.uid()
+           and (c.employer_last_read_at is null
+                or c.last_message_at > c.employer_last_read_at))
+       or (c.worker_id = auth.uid()
+           and (c.worker_last_read_at is null
+                or c.last_message_at > c.worker_last_read_at))
+  );
+$$;
+
+revoke all on function has_unread_messages() from public;
+grant execute on function has_unread_messages() to authenticated;
+
+-- ============================================================
+-- 0030_profiles_guard_admin.sql
+-- ============================================================
+-- ===========================================================================
+-- Close a privilege-escalation hole: "profiles: update own" (0001_init.sql)
+-- lets a user UPDATE their own profiles row with no column restriction and no
+-- WITH CHECK — including is_admin. Since is_admin() gates nearly every admin
+-- policy in the app (payments, verification queues, Trust Circle reads,
+-- moderation, billing_events, marketing leads, admin_metrics(), ...), any
+-- authenticated user could self-promote to admin and inherit all of it.
+--
+-- profiles_guard_admin(): mirrors jobs_guard_boost() (0028_payments.sql) —
+-- a trigger that lets ONLY service_role change is_admin. Employers'/
+-- candidates' normal profile edits (name, avatar, role, etc.) leave
+-- is_admin untouched, so they pass the guard unaffected.
+-- ===========================================================================
+
+create or replace function profiles_guard_admin()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.is_admin is distinct from old.is_admin
+     and coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'is_admin can only be changed by the service role';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger profiles_guard_admin_trg
+  before update on profiles
+  for each row execute function profiles_guard_admin();
+
+-- ============================================================
+-- 0031_subscription_billing.sql
+-- ============================================================
+-- ===========================================================================
+-- 0031 — Real Stripe subscription billing for employer plan tiers
+-- ---------------------------------------------------------------------------
+-- Extends the Phase-1 payments model (0028_payments.sql) to cover recurring
+-- subscriptions (Starter ฿990/mo, Growth ฿2,490/mo), not just one-time
+-- boosts. Until now, `upgradeTo()` was a stub that flipped `plan` directly
+-- with no charge — this closes that hole with the same security model
+-- already proven for boosts:
+--   * A paid plan can only be granted by the Stripe webhook (service_role),
+--     never by the employer's own session — see employer_profiles_guard_plan().
+--   * Downgrading yourself to 'free' stays self-service (no incentive to
+--     abuse giving up your own paid features).
+--
+-- payment_kind gains 'plan_starter' / 'plan_growth' — the extension already
+-- anticipated in 0028's comment. stripe_customer_id lets us reuse one Stripe
+-- Customer across checkout attempts instead of creating duplicates, and lets
+-- the webhook resolve `customer.subscription.*` events back to an employer.
+-- ===========================================================================
+
+alter type payment_kind add value if not exists 'plan_starter';
+alter type payment_kind add value if not exists 'plan_growth';
+
+alter table employer_profiles add column stripe_customer_id text;
+alter table employer_profiles add column stripe_subscription_id text;
+-- Stripe's own subscription status vocabulary (active, trialing, past_due,
+-- canceled, unpaid, incomplete, incomplete_expired, paused) — stored as-is
+-- rather than a Postgres enum so a new Stripe status doesn't need a migration.
+alter table employer_profiles add column subscription_status text;
+
+create unique index employer_profiles_stripe_customer_idx
+  on employer_profiles (stripe_customer_id) where stripe_customer_id is not null;
+create unique index employer_profiles_stripe_subscription_idx
+  on employer_profiles (stripe_subscription_id) where stripe_subscription_id is not null;
+
+-- ---------------------------------------------------------------------------
+-- Paywall guard: only the Stripe webhook (service_role) may set `plan` to a
+-- paid tier. Mirrors jobs_guard_boost() (0028) / profiles_guard_admin() (0030)
+-- exactly — same pattern, same reasoning, third guard trigger in this app.
+-- ---------------------------------------------------------------------------
+create or replace function employer_profiles_guard_plan()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.plan is distinct from old.plan
+     and new.plan in ('pro', 'growth')
+     and coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'plan can only be upgraded via a completed Stripe checkout';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger employer_profiles_guard_plan_trg
+  before update on employer_profiles
+  for each row execute function employer_profiles_guard_plan();
+
+-- ============================================================
+-- 0032_guard_plan_insert.sql
+-- ============================================================
+-- ===========================================================================
+-- 0032 — Close an INSERT-time bypass on employer_profiles_guard_plan
+-- ---------------------------------------------------------------------------
+-- employer_profiles_guard_plan_trg (0031) only fired BEFORE UPDATE. A
+-- first-time employer_profiles row insert — the "employers: insert own" RLS
+-- policy (0001_init.sql) has no column restriction beyond `auth.uid() = id`
+-- — could set `plan` directly to 'pro'/'growth' at row creation, bypassing
+-- the guard entirely: a fresh insert never takes the UPDATE path the guard
+-- covers, even via `.upsert()` (Postgres only fires BEFORE UPDATE when a
+-- conflicting row already exists). Found by a post-ship audit before this
+-- had a chance to be exploited or to matter financially (test-mode key).
+--
+-- Fix: fire the same trigger on INSERT too. No change to the function body
+-- needed — `old` is NULL on insert, and `new.plan is distinct from old.plan`
+-- is already TRUE whenever new.plan is non-null and old is null (IS
+-- DISTINCT FROM treats NULL as a distinct value), so the existing
+-- `and new.plan in ('pro','growth')` check gates exactly the same thing on
+-- both insert and update. Normal signups are unaffected: onboarding never
+-- sets `plan` explicitly, so it lands on its 'free' column default, which
+-- isn't in ('pro','growth') and isn't blocked.
+-- ===========================================================================
+
+drop trigger if exists employer_profiles_guard_plan_trg on employer_profiles;
+
+create trigger employer_profiles_guard_plan_trg
+  before insert or update on employer_profiles
+  for each row execute function employer_profiles_guard_plan();

@@ -16,6 +16,8 @@ const PAYMENT_ERRORS: Record<string, string> = {
   stripe: "Payment couldn’t be set up. No charge was made — please try again.",
   "stripe-session": "Stripe didn’t return a checkout link. No charge was made.",
   "stripe-cancel": "Couldn’t cancel your subscription — please try again or contact us.",
+  "already-subscribed":
+    "You already have an active subscription — downgrade to Free first, then choose a new plan.",
 };
 
 export default async function BillingPage({
@@ -207,6 +209,16 @@ export default async function BillingPage({
                         Downgrade
                       </button>
                     </form>
+                  ) : isPaid ? (
+                    // Switching directly between paid tiers isn't supported
+                    // yet — it would open a second, parallel Stripe
+                    // subscription rather than replacing the current one.
+                    // Downgrade to Free first, then choose the new tier.
+                    <p className="mt-5 text-xs text-stone-500">
+                      Downgrade to Free first, then choose this plan —
+                      switching directly between paid tiers isn&apos;t
+                      supported yet.
+                    </p>
                   ) : (
                     <form action={upgradeTo.bind(null, p.key as "pro" | "growth")} className="mt-5">
                       <button className={buttonClass(featured ? "primary" : "outline", "md", "w-full")}>

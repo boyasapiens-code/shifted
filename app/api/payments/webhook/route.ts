@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
           sub.id,
           sub.status,
           event.type === "customer.subscription.deleted",
+          typeof sub.customer === "string" ? sub.customer : sub.customer?.id,
         );
         break;
       }

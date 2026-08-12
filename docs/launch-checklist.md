@@ -71,34 +71,50 @@ additional reviewers with a one-off service-role script/query
 (`update profiles set is_admin = true where id = '<uid>'` run via
 `scripts/db-apply.mjs`-style direct connection), not through any in-app action.
 
-## 5. Payments — Stripe boost checkout (live, test-mode key)
-The Phase-1 paid wedge — boosting a job (฿299 / 30 days) — runs on
-**Stripe-hosted Checkout** (no card data ever touches our server).
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set in both `.env.local`
-and Vercel Production, so the app is **out of preview mode** — clicking
-*Boost* opens a real Stripe Checkout session. The key currently set is a
-**`sk_test_…` key**, so it charges nothing real yet; swap it for `sk_live_…`
-(and a matching live-mode `STRIPE_WEBHOOK_SECRET`) when ready to actually
-collect money.
+## 5. Payments — Stripe checkout: boosts + subscriptions (live, test-mode key)
+The Phase-1 paid wedge — boosting a job (฿299 / 30 days) — and the employer
+subscription tiers (Starter ฿990/mo, Growth ฿2,490/mo) both run on
+**Stripe-hosted Checkout** (no card data ever touches our server), sharing
+the same key and webhook. `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are
+set in both `.env.local` and Vercel Production, so the app is **out of
+preview mode** — clicking *Boost* or *Choose {plan}* opens a real Stripe
+Checkout session. The key currently set is a **`sk_test_…` key**, so it
+charges nothing real yet; swap it for `sk_live_…` (and a matching live-mode
+`STRIPE_WEBHOOK_SECRET`, on a **separate live-mode webhook endpoint** — see
+event list below) when ready to actually collect money. Note: subscription
+checkout has no design-partner allowlist in code — any employer can already
+self-serve upgrade through a real (test-mode) Stripe subscription today.
 
-- **Webhook** (this is what actually grants the boost after payment) is
-  registered at `https://www.shiftedth.com/api/payments/webhook` — **must be
-  the `www` host**. The apex `shiftedth.com` 308-redirects to `www`, and
+- **Webhook** (this is what actually grants the boost / plan after payment)
+  is registered at `https://www.shiftedth.com/api/payments/webhook` — **must
+  be the `www` host**. The apex `shiftedth.com` 308-redirects to `www`, and
   Stripe does not follow redirects on webhook delivery, so an apex-registered
   endpoint silently never receives anything (this exact bug shipped once and
   was caught and fixed by testing a real payment end to end).
   - Send events: `checkout.session.completed`,
     `checkout.session.async_payment_succeeded`,
     `checkout.session.async_payment_failed`, `checkout.session.expired`
-    (the async ones cover PromptPay's deferred confirmation).
-- The webhook is the **only** path that sets a job's `boosted_until`; a DB
-  trigger (`jobs_guard_boost()`) blocks every other role, so a boost can't be
-  granted without a confirmed charge — RLS separately blocks an employer from
-  UPDATE-ing their own `payments` row at all.
+    (the async ones cover PromptPay's deferred confirmation), plus
+    `customer.subscription.updated` and `customer.subscription.deleted`
+    (subscription renewal/past-due/cancellation sync). **The subscription
+    events are easy to forget when setting up a new (e.g. live-mode) webhook
+    endpoint** — they shipped missing once already on the test-mode endpoint,
+    which silently broke cancellation sync until caught by testing a real
+    cancel end to end; see `NOTES.md`.
+- The webhook is the **only** path that sets a job's `boosted_until` or an
+  employer's `plan` (to a paid tier); DB triggers (`jobs_guard_boost()`,
+  `employer_profiles_guard_plan()` — the latter covers both INSERT and
+  UPDATE) block every other role, so neither can be granted without a
+  confirmed charge — RLS separately blocks an employer from UPDATE-ing their
+  own `payments` row at all.
 - **Verified end to end**: boosted a real job with the Stripe test card
   (`4242 4242 4242 4242`), confirmed in the DB (not just the browser) that the
   webhook flipped `payments.status` to `paid` and extended `boosted_until` by
-  30 days. Subscriptions (Starter/Growth) remain preview-only for now.
+  30 days. Subscriptions verified the same way (upgrade → charge → webhook
+  fulfils → cancel → webhook syncs back to free) — see STATUS.md
+  "Monetization state" for the full trace, including a real bug found and
+  fixed (double-subscription on a tier change) and a known scope gap (no
+  `payments` ledger row per renewal invoice, only the initial checkout).
 
 ## 6. Error monitoring — Sentry (wired; needs a DSN)
 The Sentry SDK is installed and configured but **dormant until a DSN is set** —
@@ -143,8 +159,9 @@ with no DSN set.
 - ✅ `/auth/confirm` route for token-based sign-in links
 - ✅ Deployed to `shiftedth.com` with auto-deploy on push to `main`
 - ✅ Sentry error monitoring scaffolded (PDPA-safe) — add a DSN to activate (§6)
-- ✅ Stripe boost checkout live in test mode, verified end to end (§5) — swap
-  to an `sk_live_…` key to charge for real
+- ✅ Stripe boost checkout **and** employer subscription billing (Starter/
+  Growth) both live in test mode, verified end to end (§5) — swap to an
+  `sk_live_…` key to charge for real
 - ✅ Bilingual EN/ไทย across the app (cookie locale + header toggle)
 - ✅ Branded bilingual auth email templates (magic link, confirm signup, reset
   password) live in Supabase, verified with a real delivered sign-in email (§2)
@@ -208,5 +225,13 @@ with no DSN set.
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
-- Swap the Stripe key to `sk_live_…` (§5) to actually charge for boosts; then
-  design-partner the Starter/Growth subscriptions before turning those live.
+- Swap the Stripe key to `sk_live_…` (§5) to charge for real — now covers
+  both boosts and subscriptions, which share the same key and code path.
+  Decide whether to gate subscription self-serve to specific employers first
+  (no allowlist exists in code today) if a narrower pilot is still wanted —
+  the strategy doc frames it as "a pilot with 5–10 design partners."
+- Build a real paid-to-paid tier-switch flow (Stripe subscription price
+  swap via `stripe.subscriptions.update()`) — today switching directly
+  between Starter and Growth is blocked in the UI (redirects to downgrade-
+  then-upgrade instead) because it would otherwise open a second, parallel
+  subscription; see STATUS.md "Monetization state" for the bug this avoided.

@@ -37,16 +37,43 @@ async function isPaid(supabase: Awaited<ReturnType<typeof createClient>>, id: st
  *  - **Live** (Stripe keys set): hand off to Stripe-hosted Checkout in
  *    subscription mode. `plan` is set only after the webhook confirms the
  *    first invoice paid — see {@link fulfillSubscriptionCheckout}.
- *    `employer_profiles_guard_plan()` (migration 0031) blocks any other path
- *    from setting `plan` to a paid tier.
+ *    `employer_profiles_guard_plan()` (migrations 0031/0032) blocks every
+ *    other path (including a first-time row insert) from setting `plan` to
+ *    a paid tier.
  *  - **Preview** (no keys yet): fulfil immediately, no charge, so the flow
  *    stays testable end-to-end without keys.
+ *
+ * A second Checkout session on top of an already-live subscription would
+ * create a SECOND, independent Stripe subscription rather than replacing
+ * the first — the employer ends up billed for both, and the old
+ * subscription's id gets overwritten so the app can no longer even cancel
+ * it (found by audit before it shipped to real money). Blocked below until
+ * a real in-place tier-switch (stripe.subscriptions.update() price swap)
+ * exists; the UI (page.tsx) hides the button for this case too, but the
+ * check here is the actual gate — the UI hiding it is just not making it
+ * easy to hit by accident.
  */
 export async function upgradeTo(tier: "pro" | "growth") {
   const { supabase, user } = await requireUser();
 
   const planDef = PLANS.find((p) => p.key === tier);
   if (!planDef) redirect("/employer/billing?error=payment-init");
+
+  // Looked up up front — needed both for the already-subscribed guard below
+  // and to reuse an existing Stripe Customer.
+  const { data: employer } = await supabase
+    .from("employer_profiles")
+    .select("plan, stripe_customer_id, stripe_subscription_id")
+    .eq("id", user.id)
+    .single();
+
+  if (
+    stripeEnabled() &&
+    employer?.stripe_subscription_id &&
+    (employer.plan === "pro" || employer.plan === "growth")
+  ) {
+    redirect("/employer/billing?error=already-subscribed");
+  }
 
   const kind = tier === "pro" ? "plan_starter" : "plan_growth";
 
@@ -74,12 +101,6 @@ export async function upgradeTo(tier: "pro" | "growth") {
   // LIVE mode — Stripe-hosted Checkout, subscription mode. Reuse an existing
   // Stripe Customer if we have one on file so repeated upgrade attempts
   // don't create duplicate customers.
-  const { data: employer } = await supabase
-    .from("employer_profiles")
-    .select("stripe_customer_id")
-    .eq("id", user.id)
-    .single();
-
   const stripe = getStripe();
   let session;
   try {
@@ -110,17 +131,30 @@ export async function upgradeTo(tier: "pro" | "growth") {
     });
   } catch (e) {
     console.error("upgradeTo: Stripe session create failed", e);
-    await createAdminClient()
-      .from("payments")
-      .update({ status: "failed" })
-      .eq("id", payment.id);
+    try {
+      await createAdminClient()
+        .from("payments")
+        .update({ status: "failed" })
+        .eq("id", payment.id);
+    } catch (e2) {
+      console.error("upgradeTo: also failed to mark payment failed", e2);
+    }
     redirect("/employer/billing?error=stripe");
   }
 
-  await createAdminClient()
-    .from("payments")
-    .update({ provider_session_id: session.id })
-    .eq("id", payment.id);
+  try {
+    await createAdminClient()
+      .from("payments")
+      .update({ provider_session_id: session.id })
+      .eq("id", payment.id);
+  } catch (e) {
+    // The Checkout Session was already created at Stripe, so no risk of an
+    // unrecorded charge — but the user can't reach it from here without
+    // losing the session.url below, so surface a clean error instead of an
+    // unhandled throw.
+    console.error("upgradeTo: failed to record provider_session_id", e);
+    redirect("/employer/billing?error=stripe-session");
+  }
 
   if (!session.url) redirect("/employer/billing?error=stripe-session");
   redirect(session.url);
@@ -268,10 +302,15 @@ export async function startBoostCheckout(jobId: string) {
 
   // Record the session id for traceability + idempotency (unique index). The
   // employer has no UPDATE policy, so this goes through the service role.
-  await createAdminClient()
-    .from("payments")
-    .update({ provider_session_id: session.id })
-    .eq("id", payment.id);
+  try {
+    await createAdminClient()
+      .from("payments")
+      .update({ provider_session_id: session.id })
+      .eq("id", payment.id);
+  } catch (e) {
+    console.error("startBoostCheckout: failed to record provider_session_id", e);
+    redirect("/employer/billing?error=stripe-session");
+  }
 
   if (!session.url) redirect("/employer/billing?error=stripe-session");
   redirect(session.url);
