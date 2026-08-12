@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, stripeEnabled } from "@/lib/payments/stripe";
 import { fulfillBoostPayment, failPayment } from "@/lib/payments/boost";
+import { fulfillSubscriptionCheckout, syncSubscriptionStatus } from "@/lib/payments/subscription";
 
 // Stripe needs the raw, unparsed body to verify the signature; force the Node
 // runtime and disable static optimisation.
@@ -41,11 +42,20 @@ export async function POST(req: NextRequest) {
         const s = event.data.object as Stripe.Checkout.Session;
         if (s.payment_status === "paid") {
           const paymentId = s.metadata?.payment_id;
-          const pi =
-            typeof s.payment_intent === "string"
-              ? s.payment_intent
-              : s.payment_intent?.id;
-          if (paymentId) await fulfillBoostPayment(paymentId, pi ?? undefined);
+          if (!paymentId) break;
+          if (s.metadata?.kind === "subscription") {
+            await fulfillSubscriptionCheckout(paymentId, {
+              subscriptionId:
+                typeof s.subscription === "string" ? s.subscription : s.subscription?.id,
+              customerId: typeof s.customer === "string" ? s.customer : s.customer?.id,
+            });
+          } else {
+            const pi =
+              typeof s.payment_intent === "string"
+                ? s.payment_intent
+                : s.payment_intent?.id;
+            await fulfillBoostPayment(paymentId, pi ?? undefined);
+          }
         }
         break;
       }
@@ -57,6 +67,19 @@ export async function POST(req: NextRequest) {
       case "checkout.session.expired": {
         const s = event.data.object as Stripe.Checkout.Session;
         if (s.metadata?.payment_id) await failPayment(s.metadata.payment_id, "canceled");
+        break;
+      }
+      // Renewals, cancellations, and payment-failure status changes (active ->
+      // past_due -> unpaid, ...) all land here — the ongoing source of truth
+      // for a subscription's state after the initial checkout.
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        await syncSubscriptionStatus(
+          sub.id,
+          sub.status,
+          event.type === "customer.subscription.deleted",
+        );
         break;
       }
     }

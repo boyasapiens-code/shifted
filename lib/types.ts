@@ -106,6 +106,9 @@ export interface EmployerProfile {
   verification_level: number;
   plan: PlanTier;
   plan_since: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
   featured: boolean;
   response_rate: number | null;
   prompts_eligible: number;

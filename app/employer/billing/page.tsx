@@ -12,18 +12,26 @@ import { upgradeTo, downgradeToFree, toggleFeatured } from "./actions";
 export const metadata: Metadata = { title: "Plan & billing" };
 
 const PAYMENT_ERRORS: Record<string, string> = {
-  "payment-init": "Couldn’t start that boost — please try again.",
+  "payment-init": "Couldn’t start that — please try again.",
   stripe: "Payment couldn’t be set up. No charge was made — please try again.",
   "stripe-session": "Stripe didn’t return a checkout link. No charge was made.",
+  "stripe-cancel": "Couldn’t cancel your subscription — please try again or contact us.",
 };
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gate?: string; upgraded?: string; error?: string }>;
+  searchParams: Promise<{
+    gate?: string;
+    upgraded?: string;
+    downgraded?: string;
+    preview?: string;
+    error?: string;
+  }>;
 }) {
-  const { gate, upgraded, error } = await searchParams;
-  const boostLive = stripeEnabled();
+  const { gate, upgraded, downgraded, preview, error } = await searchParams;
+  const stripeLive = stripeEnabled();
+  const boostLive = stripeLive;
   const { supabase, user } = await requireEmployer("/employer/billing");
 
   const { data: employer } = await supabase
@@ -61,8 +69,15 @@ export default async function BillingPage({
 
           {upgraded && (
             <p className="mt-4 rounded-[var(--radius-base)] bg-success/10 px-3 py-2 text-sm text-success">
-              You&apos;re on Pro. (Billing isn&apos;t live yet — this activated Pro
-              for preview.)
+              {preview || !stripeLive
+                ? "You're upgraded. (Billing isn't live yet — this activated the plan for preview, no charge was made.)"
+                : "You're upgraded — your subscription is active and will renew monthly until you cancel."}
+            </p>
+          )}
+          {downgraded && (
+            <p className="mt-4 rounded-[var(--radius-base)] bg-success/10 px-3 py-2 text-sm text-success">
+              Your subscription has been canceled — this can take a few
+              moments to reflect below.
             </p>
           )}
           {gate === "boost" && (
@@ -241,9 +256,9 @@ export default async function BillingPage({
           </div>
 
           <p className="mt-6 text-xs text-stone-400">
-            {boostLive
-              ? "Job boosts are charged through Stripe (card & PromptPay). Subscription tiers still activate for preview only — no recurring charge yet."
-              : "Billing runs in preview: boosts and upgrades activate features without taking payment. Add Stripe keys to charge boosts for real."}
+            {stripeLive
+              ? "Job boosts and plan subscriptions are both charged through Stripe (card & PromptPay). Subscriptions renew monthly until canceled."
+              : "Billing runs in preview: boosts and upgrades activate features without taking payment. Add Stripe keys to charge for real."}
           </p>
         </Container>
       </main>
