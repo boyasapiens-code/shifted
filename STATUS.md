@@ -65,6 +65,44 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
   ฿500–1,000) also on the same page — still accrues events only, no charge
   (separate from subscriptions/boost, not yet wired to Stripe).
 
+## Cloudflare migration (in progress)
+User decided to migrate everything from Vercel to Cloudflare Workers (via
+OpenNext) + move DNS to Cloudflare too, with a staged rollout (verify on a
+Cloudflare preview URL before touching DNS). Full plan:
+`/Users/nisabo/.claude/plans/dreamy-painting-cupcake.md`.
+
+**Phase 1 (Workers-compatibility code changes) — shipped to Vercel, 2026-08-12.**
+Deliberately shipped to Vercel FIRST, before Cloudflare enters the picture,
+so a code regression and a hosting regression are never debugged together:
+- `lib/email/mailer.ts`: nodemailer/SMTP → Resend HTTP API (`fetch()`).
+  Raw SMTP sockets aren't reliably Workers-compatible; `fetch()` is. New env
+  var `RESEND_API_KEY` (same underlying Resend key as the old `SMTP_PASS`).
+  **Not yet set in Vercel Production** — transactional email (new
+  applicant/status/message) is currently a no-op until it's added there
+  (copy the value from the existing `SMTP_PASS`/`.env.local`, then redeploy
+  — Vercel env vars need a fresh deploy to take effect for serverless
+  functions). This is the one open item before Phase 1 is fully verified.
+- `app/api/payments/webhook/route.ts`: sync → async Stripe signature
+  verification (`constructEventAsync`) — required on Workers' SubtleCrypto
+  provider. **Verified live**: real boost checkout + webhook round-trip on
+  production, confirmed in DB (`payments.status='paid'`, `boosted_until`
+  extended 30 days).
+- `lib/rights.ts` / `lib/marketing-content.ts`: eliminated request-time `fs`
+  reads (Workers has no runtime filesystem) via a new build-time generator
+  (`scripts/generate-content.mjs`, wired through `predev`/`pretypecheck`
+  hooks — fully automatic, output gitignored, never stale). **Verified
+  live**: rights + marketing-solutions pages (incl. Thai-language variant)
+  render correctly on production.
+- `next.config.ts`: apex→www redirect now lives in code (`redirects()`),
+  not only Vercel's dashboard — this is the exact class of bug that broke
+  the Stripe webhook once before. **Verified live**: `curl -I
+  https://shiftedth.com/` → real `308` to `www`.
+
+**Next**: user adds `RESEND_API_KEY` to Vercel + redeploys, then Phase 1 is
+fully closed. Phase 2 (Cloudflare account + scaffolding) needs the user to
+create a Cloudflare account and provision secrets — not something done
+autonomously.
+
 ## Open follow-ups (see `docs/launch-checklist.md` "Before real users")
 - Thai lawyer review of `/legal` (national IDs collected, PDPA applies).
 - Swap Stripe key to `sk_live_…` to charge for real (boost + subscriptions
@@ -74,8 +112,8 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
 - Strategic: liquidity — more real job postings, direct employer outreach.
 
 ## Last deploy check
-- Commit `f5334f7` ("Fix two critical subscription-billing bugs found by
-  post-ship audit") — CI: success (1m27s). Vercel: success, deployed.
+- Commit `ad87025` ("Cloudflare migration Phase 1: Workers-compatibility
+  code changes") — CI: success (1m38s). Vercel: success, deployed.
   Checked 2026-08-12.
 
 ## Watch for

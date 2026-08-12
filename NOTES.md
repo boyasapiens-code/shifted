@@ -72,3 +72,23 @@ Reusable facts learned the hard way. One line each; append, don't restructure.
   different way, or that a second click doesn't create a second resource.
   Both critical bugs above were found by exactly this kind of dedicated
   review, not by the original end-to-end verification, which passed.
+- Vercel's apex→www 308 redirect (shiftedth.com → www.shiftedth.com) used to
+  exist ONLY in Vercel's dashboard domain config — completely invisible to
+  the repo, undiffable, unreviewable, and the root cause of a real incident
+  (Stripe's webhook silently failing at the apex). Any redirect a live
+  integration depends on for correctness (not just SEO) belongs in code
+  (`next.config.ts`'s `redirects()`), not a platform dashboard — codify it
+  the first time it's noticed to matter, don't wait for a migration to force
+  the issue.
+- Cloudflare Workers has no filesystem at runtime, at ANY point — not just
+  "don't call fs at request time," but module-scope code also runs inside
+  the Worker isolate on every cold start, not on a build machine. A
+  Vercel-style pattern of "read content files with fs, just make sure
+  they're bundled" (`outputFileTracingIncludes`) has no Workers equivalent;
+  the actual fix is a build-time generation step that runs on a real Node
+  process during `next build` and writes the parsed/raw data into an
+  imported module — `fs` has to be gone from the request-time code path
+  entirely, not just called less.
+- Vercel environment variables need a fresh deployment to take effect for
+  serverless functions — adding/changing one in the dashboard doesn't
+  retroactively apply to the already-built, currently-running deployment.
