@@ -148,6 +148,15 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
   trust-circle test fixture re-seeded — `npm run lint` and
   `npm run test:trust-circle` (11/11) both run clean again (both were flagged
   by the platform audit that found the `is_admin` hole)
+- ✅ `app/auth/callback/route.ts`'s `next` redirect param hardened
+  (`sanitizeNext()`) — flagged as a low-priority hygiene note in the
+  2026-08-11 audit: string concatenation (`${origin}${destination}`, not URL
+  resolution) already made it non-exploitable as a classic open redirect, but
+  `next` is attacker-controlled end to end and that safety depended entirely
+  on the concatenation pattern never changing. Now only single-leading-slash
+  relative paths pass; `//`, `/\`, absolute URLs, and tab/newline-bypass
+  variants are rejected. Verified: typecheck + build clean, sanitizer checked
+  against 11 cases, deployed commit confirmed live on `shiftedth.com`
 
 ## Before real users (recommended follow-ups)
 - Have a Thai lawyer review `/legal` (we collect national IDs — PDPA applies).
