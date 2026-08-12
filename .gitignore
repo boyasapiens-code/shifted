@@ -8,12 +8,15 @@
 /out/
 next-env.d.ts
 
-# generated at build/dev time by scripts/generate-content.mjs — never stale,
-# never needs to be committed (see lib/generated/content.ts)
-/lib/generated/
-
 # production
 /build
+
+# cloudflare (@opennextjs/cloudflare + wrangler) — see wrangler.jsonc
+/.open-next/
+/.wrangler/
+.dev.vars
+.dev.vars.*
+cloudflare-env.d.ts
 
 # env
 .env

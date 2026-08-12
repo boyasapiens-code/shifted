@@ -88,20 +88,70 @@ so a code regression and a hosting regression are never debugged together:
   production, confirmed in DB (`payments.status='paid'`, `boosted_until`
   extended 30 days).
 - `lib/rights.ts` / `lib/marketing-content.ts`: eliminated request-time `fs`
-  reads (Workers has no runtime filesystem) via a new build-time generator
-  (`scripts/generate-content.mjs`, wired through `predev`/`pretypecheck`
-  hooks — fully automatic, output gitignored, never stale). **Verified
-  live**: rights + marketing-solutions pages (incl. Thai-language variant)
-  render correctly on production.
+  reads (Workers has no runtime filesystem). Originally via a build-time
+  generator (`scripts/generate-content.mjs`); **since superseded** by the
+  content-CMS work (2026-08-12) — content now lives in Supabase, queried
+  directly, zero `fs` dependency at any point (build or request time),
+  which is strictly simpler than the generator ever was. **Verified live**:
+  rights + marketing-solutions pages (incl. Thai) render correctly on
+  production, from the DB.
 - `next.config.ts`: apex→www redirect now lives in code (`redirects()`),
   not only Vercel's dashboard — this is the exact class of bug that broke
   the Stripe webhook once before. **Verified live**: `curl -I
   https://shiftedth.com/` → real `308` to `www`.
 
-**Next**: user adds `RESEND_API_KEY` to Vercel + redeploys, then Phase 1 is
-fully closed. Phase 2 (Cloudflare account + scaffolding) needs the user to
-create a Cloudflare account and provision secrets — not something done
-autonomously.
+**Phase 1 status**: still blocked on the user adding `RESEND_API_KEY` to
+Vercel Production + redeploying (transactional email is a no-op until
+then) — not resolved this session, not re-checked.
+
+**Phase 2 (Cloudflare scaffolding) — done, 2026-08-13. Additive only, zero
+production impact — shiftedth.com still serves 100% from Vercel.**
+- Added `@opennextjs/cloudflare` + `wrangler` as devDependencies.
+  **`wrangler` needs Node >=22** (this repo's app is nvm-pinned to
+  v20.20.2) — used v22.23.2, already installed via nvm, for these commands
+  only; the app's own dev/build/typecheck are untouched, still v20.20.2.
+- `wrangler.jsonc` + `open-next.config.ts`: scaffolded. R2 (page cache) +
+  D1 (tag cache) bindings deliberately left commented out/unconfigured —
+  see "Known gap" below.
+- New `package.json` scripts, alongside the existing ones (Vercel's build
+  still uses the untouched `build` script): `build:cloudflare`,
+  `preview:cloudflare`, `upload:cloudflare`, `deploy:cloudflare`,
+  `cf-typegen`.
+- `.dev.vars` (gitignored): local-only mirror of `.env.local`'s
+  runtime-relevant vars, for `wrangler dev`/`preview`.
+- **Verified locally** (no Cloudflare account needed at all for this —
+  `wrangler dev` local mode resolves all bindings without login):
+  `npm run build:cloudflare` succeeds end to end (Next build + OpenNext
+  bundle → `.open-next/worker.js`); `wrangler dev` served the real app
+  correctly under actual `workerd` (not just Vercel/Node) — rights hub,
+  one article (correct DB-backed content + status badge), jobs page (real
+  listings), `/opengraph-image`, `/sitemap.xml` all 200 with correct
+  content; `/admin/content` correctly redirects (unauthenticated); **the
+  Stripe webhook's async-signature-verification code path (the Phase 1
+  fix) was exercised for the first time against a real Workers runtime** —
+  a bogus signature correctly produced a clean 400, not a crash. Zero
+  warn/error-level server logs across the whole pass (checked via
+  wrangler's local observability query API).
+- **Known gap, not yet resolved**: `revalidatePath()`/`revalidateTag()` —
+  which `/admin/content`'s save actions depend on to make edits show up
+  immediately on the statically-generated rights/marketing-solutions
+  pages — needs an R2 bucket (page cache) + D1 database (tag cache) to
+  work correctly on Cloudflare. Both are real, billable Cloudflare
+  resources tied to an account; not provisioned, not something to
+  provision without the user. Until this is set up, a real Cloudflare
+  deployment would silently serve stale content after an admin edit
+  (same risk `revalidatePath` was added to prevent). Must be resolved
+  before Cloudflare can be considered a true parity replacement for
+  Vercel, where this already works.
+
+**Next (needs the user — I don't create accounts or provision billable
+infra)**: create/confirm a Cloudflare account, generate an API token,
+create the R2 bucket + D1 database for the cache backends above, and
+provision the runtime secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+Supabase keys, `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`,
+`NEXT_PUBLIC_SENTRY_DSN`) via `wrangler secret put`/dashboard. Once that's
+done, Phase 3 (real Cloudflare preview-URL deployment + full verification
+checklist) can proceed.
 
 ## Content CMS (2026-08-12) — replaces Markdown files with DB + admin UI
 Separate from the Cloudflare migration above (started from "Astro headless

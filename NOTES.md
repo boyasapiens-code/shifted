@@ -112,3 +112,23 @@ Reusable facts learned the hard way. One line each; append, don't restructure.
   cookie-free client — added `lib/supabase/public.ts` (plain anon-key
   client, no SSR cookie plumbing) for read paths that are genuinely public
   and don't need per-user session context.
+- `wrangler` 4.90.0+ requires Node >=22 (checked several recent versions,
+  all `{ node: '>=22.0.0' }`); only `wrangler@4.86.0`-ish and earlier
+  support Node 20. This repo's default Node is nvm-pinned to v20.20.2 for
+  the app itself (Vercel's build is unaffected either way — separate
+  runtime). Installed Node v22.23.2 was already available via nvm
+  alongside it — use `export PATH="$HOME/.nvm/versions/node/v22.23.2/bin:$PATH"`
+  for any `wrangler`/`opennextjs-cloudflare` command specifically, same
+  pattern as the existing v20.20.2 PATH prefix for everything else.
+- `wrangler dev` (local mode, no `--remote` flag) needs NO real Cloudflare
+  account, login, or API token at all — bindings (assets, service
+  self-reference, env vars from `.dev.vars`) all resolve locally via
+  `workerd`. Verified: full app served correctly (real Supabase-backed
+  pages, the async-Stripe-webhook-signature code path) purely locally.
+  Only actual `wrangler deploy` (and R2/D1 for the incremental/tag cache,
+  which are real billable Cloudflare resources) need the account. Useful:
+  local `wrangler dev` exposes a request-trace/log query API at
+  `/cdn-cgi/local/explorer/api/local/observability/query` (read-only SQL
+  over a `logs` table: `trace_id, span_id, ts_ms, level, message`) — good
+  for confirming zero warn/error-level logs across a test pass without
+  eyeballing raw terminal output.

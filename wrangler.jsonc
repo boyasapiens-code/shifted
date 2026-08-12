@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shifted",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    // Lets the worker invoke itself — OpenNext uses this internally for
+    // ISR/cache-related requests.
+    { "binding": "WORKER_SELF_REFERENCE", "service": "shifted" }
+  ]
+
+  // Deliberately NOT configured yet (needs a real Cloudflare account —
+  // Phase 2 is scaffolding-only, zero production impact, see
+  // supabase/../STATUS.md "Cloudflare migration"):
+  //
+  // "r2_buckets": [
+  //   { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "<create via `wrangler r2 bucket create`>" }
+  // ],
+  // "d1_databases": [
+  //   { "binding": "NEXT_TAG_CACHE_D1", "database_name": "<create via `wrangler d1 create`>", "database_id": "<...>" }
+  // ]
+  //
+  // Without these, next.js's revalidatePath()/revalidateTag() — used by
+  // /admin/content's save actions to make edits show up immediately on the
+  // statically-generated rights/marketing-solutions pages — will NOT work
+  // correctly on a real Cloudflare deployment: R2 stores the cached page
+  // bodies, D1 tracks which cache entries a revalidatePath() call should
+  // invalidate. Without R2 configured, OpenNext falls back to a read-only,
+  // build-time-only cache for prerendered routes (no revalidation at all).
+  // This must be resolved (both provisioned + wired in here) before the
+  // Cloudflare deployment can be considered a true parity replacement for
+  // Vercel, where this already works out of the box.
+
+  // "images": { "binding": "IMAGES" } — not needed: this app never uses
+  // next/image (plain <img> throughout), confirmed during Phase 1 research.
+}

@@ -15,7 +15,12 @@
     "seed": "node scripts/seed.mjs",
     "test:trust-circle": "node scripts/test-trust-circle.mjs",
     "test:moderation": "node scripts/test-moderation.mjs",
-    "test:matching": "node scripts/test-matching.mjs"
+    "test:matching": "node scripts/test-matching.mjs",
+    "build:cloudflare": "npm run typecheck && npm run test:moderation && npm run test:matching && opennextjs-cloudflare build",
+    "preview:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare preview",
+    "upload:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare upload",
+    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.62.0",
@@ -32,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -40,6 +46,7 @@
     "eslint-config-next": "^15.5.19",
     "husky": "^9.1.7",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.122.0"
   }
 }
