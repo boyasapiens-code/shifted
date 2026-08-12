@@ -103,6 +103,17 @@ collect money.
 ## 6. Error monitoring — Sentry (wired; needs a DSN)
 The Sentry SDK is installed and configured but **dormant until a DSN is set** —
 without it, every Sentry call is a no-op, so local/preview stay silent.
+
+Wiring checked 2026-08-12 (not yet against a real DSN, since that needs a
+sentry.io account): server (`sentry.server.config.ts`), edge
+(`sentry.edge.config.ts`), and client (`instrumentation-client.ts`) all
+correctly gate on `NEXT_PUBLIC_SENTRY_DSN`. `instrumentation.ts`'s
+`onRequestError` hook captures Server Component / Route Handler / Server
+Action errors regardless of any `error.tsx` boundary; the browser SDK
+installs its own global `window.onerror` / `unhandledrejection` handlers on
+init, so client-side errors are captured too. `npm run build` stays clean
+with no DSN set.
+
 - Create a project at sentry.io (platform: **Next.js**), copy the DSN.
 - Add to `.env.local` and to Vercel → Project → Settings → Environment Variables:
   - `NEXT_PUBLIC_SENTRY_DSN` — turns on error capture (client + server + edge).
@@ -113,8 +124,18 @@ without it, every Sentry call is a no-op, so local/preview stay silent.
 - Privacy (PDPA): `sendDefaultPii: false` everywhere and **no Session Replay**,
   so no cookies, IPs, request bodies, or DOM recordings are sent. Keep it that
   way — worker PII must never leave the app via telemetry.
-- Verify after setting the DSN: a thrown error surfaces in the Sentry dashboard;
-  the styled fallback lives in `app/global-error.tsx`.
+- `NEXT_PUBLIC_SENTRY_DSN` gets inlined into the client bundle at **build**
+  time (standard `NEXT_PUBLIC_*` behavior) — after saving it in Vercel,
+  trigger a fresh deploy (push, or manual Redeploy). Just saving the env var
+  doesn't retroactively update already-built client assets.
+- `app/global-error.tsx` has the branded bilingual fallback + `captureException`
+  call, but per Next.js semantics it only activates for a crash in the root
+  layout itself. Ordinary page/component errors are still captured by Sentry
+  (via the mechanisms above) but render Next's plain default error screen,
+  since there's no `app/error.tsx` boundary anywhere yet — a UX gap, not a
+  Sentry-capture gap. Add one later if the plain fallback becomes an issue.
+- Verify after setting the DSN and redeploying: throw a test error, confirm it
+  surfaces in the Sentry dashboard.
 
 ## Already done (in code)
 - ✅ Favicon / app icon (S-monogram) and Open Graph share image
