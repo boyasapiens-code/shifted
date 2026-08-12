@@ -43,3 +43,32 @@ Reusable facts learned the hard way. One line each; append, don't restructure.
   event type to the handler, and test with a real event, not just a code
   review — this one shipped silently working for the initial charge but
   silently NOT working for the subsequent lifecycle event.
+- A DB guard trigger written as `before update` only guards UPDATE — a
+  first-time row INSERT never takes that path (even via `.upsert()`, which
+  only fires BEFORE UPDATE triggers when a conflicting row already exists),
+  so a column-value restriction meant to be absolute needs `before insert or
+  update` explicitly, or a separate BEFORE INSERT trigger. Shipped once as
+  `before update` only on a paywall guard (employer_profiles_guard_plan) —
+  caught by a dedicated post-ship audit before it was exploited, not by
+  design. When adding a guard trigger for "column X can only be set by
+  service_role," always ask whether a fresh row insert can reach the same
+  column, not just an update to an existing row.
+- When a "swap/upgrade" action creates a new resource via a payment
+  provider (a new Checkout Session, a new subscription, ...), always check
+  for an existing live resource of the same kind FIRST — reusing the
+  Customer id is not the same as replacing the Subscription; Stripe happily
+  creates a second, independent, still-billing subscription on the same
+  customer if you don't explicitly check/cancel the old one first. Shipped
+  once on `upgradeTo()` (tier-change), reachable via the normal UI "Choose a
+  higher tier" button while already subscribed — caught by audit before a
+  real customer double-paid, not by design. A one-time "boost" style
+  purchase has no such trap (nothing to conflict with); anything with an
+  ongoing/recurring resource does.
+- After a substantive feature ships (especially anything touching real
+  payments), a dedicated adversarial audit of just that feature — not a
+  general platform sweep — is worth running before considering it done,
+  even after a successful live end-to-end test. A successful test proves
+  the happy path works; it doesn't prove the guard can't be bypassed a
+  different way, or that a second click doesn't create a second resource.
+  Both critical bugs above were found by exactly this kind of dedicated
+  review, not by the original end-to-end verification, which passed.

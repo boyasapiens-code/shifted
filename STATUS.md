@@ -30,17 +30,37 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
 ## Monetization state
 - Boost (฿299/30 days): live via Stripe Checkout in test-mode key — real
   charge flow, not preview.
-- Employer subscription tiers (Free / Starter ฿990 / Growth ฿2,490/mo): **now
-  a real, live recurring Stripe charge** (test-mode key — see migration 0031,
-  `lib/payments/subscription.ts`). Upgrade creates a real subscription-mode
-  Checkout session; `employer_profiles_guard_plan()` blocks self-granting a
-  paid tier outside the webhook. Downgrade cancels the real Stripe
-  subscription. Verified fully end-to-end on Stash BKK's real account
-  (upgrade → charge → webhook fulfils → cancel → webhook syncs back to free),
-  including catching and fixing a real gap: the Stripe webhook endpoint
-  wasn't subscribed to `customer.subscription.updated`/`.deleted` events (only
-  the 4 checkout.session.* ones) — added via the Stripe API. Known scope gap:
-  no `payments` ledger row per renewal invoice yet, only the initial checkout.
+- Employer subscription tiers (Free / Starter ฿990 / Growth ฿2,490/mo): real,
+  live recurring Stripe charge (test-mode key — migration 0031/0032,
+  `lib/payments/subscription.ts`). `employer_profiles_guard_plan()` blocks
+  self-granting a paid tier outside the webhook, on **both INSERT and
+  UPDATE** (0032 closed an INSERT-time bypass found by a dedicated post-ship
+  audit — see below).
+  - **Post-ship audit (2026-08-12) found and fixed 2 CRITICAL bugs** before
+    real money was ever at stake: (1) the guard trigger above only covered
+    UPDATE, so a first-time employer_profiles insert could self-grant a paid
+    plan for free — fixed in 0032, verified in rolled-back transactions
+    (self-grant blocked, normal signups unaffected). (2) `upgradeTo()` never
+    checked for an existing subscription, so changing tiers via the normal
+    "Choose {tier}" button created a SECOND parallel Stripe subscription
+    instead of replacing the first — the employer would've been billed for
+    both, with the old subscription's id unrecoverable. Fixed: blocked
+    server-side (redirects with a clear error) and in the UI (paid-tier
+    employer sees "downgrade to Free first" instead of a live "Choose"
+    button that would trigger the bug). Verified live: Stash BKK subscribed
+    to Starter for real (sub_1U3aphK3xOYHLaX2poqKsRVG, active), then
+    confirmed the Growth card no longer offers a direct switch.
+  - Also from the same audit: `syncSubscriptionStatus()` now falls back to
+    `stripe_customer_id` when `stripe_subscription_id` isn't linked yet
+    (mitigates, doesn't fully close, an out-of-order-webhook-delivery edge
+    case) and clears `stripe_subscription_id` on lapse/cancel.
+  - Earlier in the same session: the Stripe webhook endpoint wasn't
+    subscribed to `customer.subscription.updated`/`.deleted` events (only the
+    4 checkout.session.* ones) — added via the Stripe API.
+  - **Known, deliberate gaps, not yet built**: no real in-place paid-to-paid
+    tier switch (Stripe subscription price swap) — currently blocked, not
+    solved; no `payments` ledger row per renewal invoice, only the initial
+    checkout.
 - Outcome-based billing ledger (confirmed hire ฿1,500, retention milestones
   ฿500–1,000) also on the same page — still accrues events only, no charge
   (separate from subscriptions/boost, not yet wired to Stripe).
@@ -54,8 +74,9 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
 - Strategic: liquidity — more real job postings, direct employer outreach.
 
 ## Last deploy check
-- Commit `b2e923e` ("Wire real Stripe subscription billing for employer plan
-  tiers") — CI: success (1m9s). Vercel: success, deployed. Checked 2026-08-12.
+- Commit `f5334f7` ("Fix two critical subscription-billing bugs found by
+  post-ship audit") — CI: success (1m27s). Vercel: success, deployed.
+  Checked 2026-08-12.
 
 ## Watch for
 - Other Claude Code sessions may be operating on this repo concurrently and
