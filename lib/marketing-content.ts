@@ -1,7 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
 import matter from "gray-matter";
 import { marked } from "marked";
+import { MARKETING_FILES } from "@/lib/generated/content";
 
 // Markdown-driven content (same approach as the rights hub). Add a post or a
 // spotlight by dropping a .md file in — no code changes.
@@ -61,7 +60,6 @@ export interface Spotlight {
   seo: { metaTitle?: string; metaDescription?: string; ogImage?: string };
 }
 
-const dir = (kind: string) => path.join(process.cwd(), "content", "marketing", kind);
 const html = (md: string) => (md ? (marked.parse(md, { async: false }) as string) : "");
 
 function readTimeOf(body: string): number {
@@ -94,9 +92,7 @@ function spotlightSections(body: string) {
 }
 
 function listMd(kind: string): string[] {
-  const d = dir(kind);
-  if (!fs.existsSync(d)) return [];
-  return fs.readdirSync(d).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, ""));
+  return Object.keys(MARKETING_FILES[kind] ?? {});
 }
 
 export function getAllIdeas(): Idea[] {
@@ -107,9 +103,9 @@ export function getAllIdeas(): Idea[] {
 }
 
 export function loadIdea(slug: string): Idea | null {
-  const file = path.join(dir("ideas"), `${slug}.md`);
-  if (!fs.existsSync(file)) return null;
-  const { data, content } = matter(fs.readFileSync(file, "utf8"));
+  const raw = MARKETING_FILES.ideas?.[slug];
+  if (!raw) return null;
+  const { data, content } = matter(raw);
   return {
     slug: data.slug ?? slug,
     title: data.title ?? slug,
@@ -134,9 +130,9 @@ export function getAllSpotlights(): Spotlight[] {
 }
 
 export function loadSpotlight(slug: string): Spotlight | null {
-  const file = path.join(dir("spotlights"), `${slug}.md`);
-  if (!fs.existsSync(file)) return null;
-  const { data, content } = matter(fs.readFileSync(file, "utf8"));
+  const raw = MARKETING_FILES.spotlights?.[slug];
+  if (!raw) return null;
+  const { data, content } = matter(raw);
   return {
     slug: data.slug ?? slug,
     businessName: data.businessName ?? slug,

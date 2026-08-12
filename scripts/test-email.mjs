@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Send one test email through the app's SMTP config, to confirm notifications
- * will work. Reads the same env vars as lib/email/mailer.ts.
+ * Send one test email through the app's Resend HTTP API config (matches
+ * lib/email/mailer.ts exactly — same env vars, same fetch call), to confirm
+ * notifications will work.
  *
- * Run:  node scripts/test-email.mjs                 (sends to SMTP_USER)
+ * Run:  node scripts/test-email.mjs                 (sends to admin@shiftedth.com)
  *       node scripts/test-email.mjs you@example.com (sends to a given address)
  */
-import nodemailer from "nodemailer";
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -20,32 +20,34 @@ if (existsSync(envPath)) {
   }
 }
 
-const { SMTP_HOST = "smtp.resend.com", SMTP_PORT = "465", SMTP_USER, SMTP_PASS } = process.env;
-if (!SMTP_USER || !SMTP_PASS) {
-  console.error("✗ SMTP_USER / SMTP_PASS not set in .env.local — add them first.");
+const { RESEND_API_KEY, EMAIL_FROM = "SHIFTED <admin@shiftedth.com>" } = process.env;
+if (!RESEND_API_KEY) {
+  console.error("✗ RESEND_API_KEY not set in .env.local — add it first.");
   process.exit(1);
 }
-const to = process.argv[2] || SMTP_USER;
-const from = process.env.EMAIL_FROM || `SHIFTED <${SMTP_USER}>`;
-
-const transport = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: Number(SMTP_PORT),
-  secure: Number(SMTP_PORT) === 465,
-  auth: { user: SMTP_USER, pass: SMTP_PASS },
-});
+const to = process.argv[2] || "admin@shiftedth.com";
 
 try {
-  await transport.verify();
-  console.log(`✓ SMTP connection OK (${SMTP_HOST}:${SMTP_PORT})`);
-  const info = await transport.sendMail({
-    from,
-    to,
-    subject: "SHIFTED — SMTP test ✓",
-    text: "If you can read this, transactional notifications are working.",
-    html: '<p style="font-family:sans-serif">If you can read this, transactional notifications are working. ✓</p>',
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to,
+      subject: "SHIFTED — Resend API test ✓",
+      text: "If you can read this, transactional notifications are working.",
+      html: '<p style="font-family:sans-serif">If you can read this, transactional notifications are working. ✓</p>',
+    }),
   });
-  console.log(`✓ Sent to ${to} (messageId ${info.messageId})`);
+  if (!res.ok) {
+    console.error(`✗ Failed: ${res.status}`, await res.text());
+    process.exit(1);
+  }
+  const data = await res.json();
+  console.log(`✓ Sent to ${to} (id ${data.id})`);
 } catch (e) {
   console.error("✗ Failed:", e.message);
   process.exit(1);

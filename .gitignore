@@ -8,6 +8,10 @@
 /out/
 next-env.d.ts
 
+# generated at build/dev time by scripts/generate-content.mjs — never stale,
+# never needs to be committed (see lib/generated/content.ts)
+/lib/generated/
+
 # production
 /build
 

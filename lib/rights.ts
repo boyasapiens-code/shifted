@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import matter from "gray-matter";
+import { RIGHTS_FILES } from "@/lib/generated/content";
 
 export type RightsLang = "en" | "th";
 export const RIGHTS_LANGS: RightsLang[] = ["en", "th"];
@@ -223,9 +222,6 @@ export interface RightsArticle {
   };
 }
 
-const contentDir = (lang: RightsLang) =>
-  path.join(process.cwd(), "content", "rights", lang);
-
 // Heading → canonical section key, matched in both languages so a Thai article
 // can use Thai H2s. Compared lower-cased and trimmed.
 const SECTION_HEADINGS: Record<string, "quick" | "law" | "both" | "myths" | "good"> = {
@@ -288,14 +284,14 @@ function parseSections(body: string) {
 
 /** Which languages a given article slug has files for (en is canonical). */
 export function articleLangs(slug: string): RightsLang[] {
-  return RIGHTS_LANGS.filter((l) => fs.existsSync(path.join(contentDir(l), `${slug}.md`)));
+  return RIGHTS_LANGS.filter((l) => Boolean(RIGHTS_FILES[l]?.[slug]));
 }
 
 function loadFile(slug: string, lang: RightsLang = "en"): RightsArticle {
   // Fall back to English if the requested language isn't translated yet.
-  const file = path.join(contentDir(lang), `${slug}.md`);
-  const effectiveLang: RightsLang = fs.existsSync(file) ? lang : "en";
-  const raw = fs.readFileSync(path.join(contentDir(effectiveLang), `${slug}.md`), "utf8");
+  const effectiveLang: RightsLang = RIGHTS_FILES[lang]?.[slug] ? lang : "en";
+  const raw = RIGHTS_FILES[effectiveLang]?.[slug];
+  if (!raw) throw new Error(`Rights article "${slug}" not found for lang "${effectiveLang}".`);
   const { data, content } = matter(raw);
   const article: RightsArticle = {
     slug: data.slug ?? slug,
@@ -326,12 +322,9 @@ function loadFile(slug: string, lang: RightsLang = "en"): RightsArticle {
 }
 
 export function getAllRightsArticles(lang: RightsLang = "en"): RightsArticle[] {
-  const dir = contentDir("en"); // en is the canonical set of slugs
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => loadFile(f.replace(/\.md$/, ""), lang))
+  const slugs = Object.keys(RIGHTS_FILES.en ?? {}); // en is the canonical set of slugs
+  return slugs
+    .map((slug) => loadFile(slug, lang))
     .filter((a) => a.status !== "draft");
 }
 

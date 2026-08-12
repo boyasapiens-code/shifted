@@ -1,39 +1,29 @@
-import nodemailer from "nodemailer";
 import { SUPPORT_EMAIL, SITE_NAME } from "@/lib/site";
 
 // Transactional email for the app (NOT the Supabase auth emails — those are
-// configured in the Supabase dashboard). Gated on SMTP credentials, exactly
-// like Stripe/Sentry: a no-op until SMTP_USER + SMTP_PASS are set, so the app
-// builds and runs today and starts sending the moment creds land in env.
+// configured directly in the Supabase dashboard's SMTP settings and are
+// unaffected by this file). Gated on RESEND_API_KEY, exactly like Stripe/
+// Sentry: a no-op until it's set, so the app builds and runs today and
+// starts sending the moment the key lands in env.
 //
-// Provider-agnostic SMTP. We use Resend (shiftedth.com is on Namecheap email
-// forwarding, which can't send): host smtp.resend.com, port 465, user "resend",
-// pass = a Resend API key. See launch-checklist §2.
+// Calls Resend's HTTP API directly (a plain fetch()) rather than SMTP via
+// nodemailer. nodemailer opens raw SMTP/TLS sockets, which Cloudflare
+// Workers doesn't support the way it needs — fetch() is the one HTTP
+// primitive guaranteed to work identically on Node and Workers, so this
+// removes that compatibility risk entirely instead of gambling on socket
+// support. See NOTES.md for the migration note. Resend is still the
+// provider (shiftedth.com is on Namecheap email forwarding, which can't
+// send) — just via its REST API instead of its SMTP relay.
 
 export function emailEnabled(): boolean {
-  return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  return Boolean(process.env.RESEND_API_KEY);
 }
 
-const FROM =
-  process.env.EMAIL_FROM || `${SITE_NAME} <${SUPPORT_EMAIL}>`;
-
-let _transport: nodemailer.Transporter | null = null;
-function transport() {
-  if (!_transport) {
-    const port = Number(process.env.SMTP_PORT || 465);
-    _transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.resend.com",
-      port,
-      secure: port === 465,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
-  }
-  return _transport;
-}
+const FROM = process.env.EMAIL_FROM || `${SITE_NAME} <${SUPPORT_EMAIL}>`;
 
 /**
  * Send one email. Never throws — a mail failure must not break the user action
- * that triggered it. Returns true if sent. When SMTP isn't configured it logs
+ * that triggered it. Returns true if sent. When Resend isn't configured it logs
  * and returns false (visible in dev, silent-safe in prod).
  */
 export async function sendEmail(opts: {
@@ -49,7 +39,24 @@ export async function sendEmail(opts: {
     return false;
   }
   try {
-    await transport().sendMail({ from: FROM, ...opts });
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+        text: opts.text,
+      }),
+    });
+    if (!res.ok) {
+      console.error("sendEmail failed:", res.status, await res.text());
+      return false;
+    }
     return true;
   } catch (err) {
     console.error("sendEmail failed:", err);

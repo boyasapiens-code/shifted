@@ -38,10 +38,13 @@ Verified end to end: a real magic-link email was requested, arrived from
 that link worked.
 
 ### 2b. App transactional emails (new-applicant / status / message) ✅ done
-`SMTP_USER` / `SMTP_PASS` (a separate Resend API key from the one Supabase
-uses, so either can be rotated independently) are set in both `.env.local` and
-Vercel Production. `SMTP_HOST`/`SMTP_PORT`/`EMAIL_FROM` are left unset and rely
-on their in-code defaults (`smtp.resend.com:465`, `SHIFTED <admin@shiftedth.com>`).
+`RESEND_API_KEY` (a separate Resend API key from the one Supabase uses, so
+either can be rotated independently) is set in `.env.local` and Vercel
+Production. `EMAIL_FROM` is left unset and relies on its in-code default
+(`SHIFTED <admin@shiftedth.com>`). Sent via Resend's **HTTP API** directly
+(`lib/email/mailer.ts`), not SMTP — migrated ahead of the Cloudflare Workers
+move, since raw SMTP sockets (nodemailer) aren't reliably Workers-compatible;
+`fetch()` is. Same underlying Resend account, just a different transport.
 
 Not yet verified with a *real* notification firing — the platform has 0
 applications and 0 messages so far, so `lib/notify.ts` hasn't actually been

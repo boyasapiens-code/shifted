@@ -29,7 +29,12 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = getStripe().webhooks.constructEvent(body, sig, secret);
+    // Async, not the sync constructEvent(): the stripe SDK's Workers/edge
+    // export resolves to a SubtleCrypto-based provider whose sync HMAC path
+    // throws (CryptoProviderOnlySupportsAsyncError) — only the async path
+    // works there. Also correct on Node (Vercel today), so this is safe to
+    // ship before Cloudflare enters the picture at all.
+    event = await getStripe().webhooks.constructEventAsync(body, sig, secret);
   } catch (err) {
     console.error("stripe webhook: signature verification failed", err);
     return NextResponse.json({ error: "invalid signature" }, { status: 400 });

@@ -8,11 +8,21 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
-  // Pages that read Markdown from content/ at request time — ensure those files
-  // are bundled into the serverless functions on Vercel.
-  outputFileTracingIncludes: {
-    "/rights/**": ["./content/rights/**/*"],
-    "/marketing-solutions/**": ["./content/marketing/**/*"],
+  // Canonical host is www — the apex is a redirect shell only. This used to
+  // live ONLY in Vercel's dashboard domain config, invisible to this repo;
+  // Stripe's webhook silently failed once because it was registered at the
+  // apex, which redirects, and Stripe doesn't follow redirects on webhook
+  // delivery (see docs/launch-checklist.md §5). Making it code closes that
+  // gap for good and makes it portable across hosting providers.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "shiftedth.com" }],
+        destination: "https://www.shiftedth.com/:path*",
+        permanent: true,
+      },
+    ];
   },
 };
 
