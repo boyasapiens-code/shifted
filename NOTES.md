@@ -33,3 +33,13 @@ Reusable facts learned the hard way. One line each; append, don't restructure.
 - Vercel deploys and GitHub Actions CI are fully independent consumers of the
   same push webhook — neither gates the other. A failed CI run does not stop
   a Vercel deploy, and vice versa.
+- Stripe webhook endpoints only deliver event TYPES they're explicitly
+  subscribed to (`enabled_events`) — adding a new `case` in the webhook route
+  handler does nothing until the endpoint's subscription list is also
+  updated (via `stripe.webhookEndpoints.update()` or the dashboard). Stripe
+  does not retroactively deliver/retry events that occurred before an event
+  type was added to the subscription list. Check
+  `stripe.webhookEndpoints.list()` → `enabled_events` whenever adding a new
+  event type to the handler, and test with a real event, not just a code
+  review — this one shipped silently working for the initial charge but
+  silently NOT working for the subsequent lifecycle event.
