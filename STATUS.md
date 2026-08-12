@@ -27,6 +27,17 @@ Last updated: 2026-08-12. Read this first; don't re-derive what's below.
   (`.husky/pre-push`) — auto-runs on any push touching Trust Circle surface,
   using local `.env.local` creds. No CI secrets, no branch protection.
 
+## Monetization state
+- Boost (฿299/30 days): live via Stripe Checkout in test-mode key — real
+  charge flow, not preview.
+- Employer subscription tiers (Free / Starter ฿990 / Growth ฿2,490/mo):
+  scaffolded and live at `/employer/billing` — tier cards, features,
+  upgrade/downgrade actions all work, but activate for **preview only**, no
+  recurring charge yet (`isPaidPlan`/`plan` column exist; no Stripe
+  subscription object wired up). Stash BKK is currently on Starter (preview).
+- Outcome-based billing ledger (confirmed hire ฿1,500, retention milestones
+  ฿500–1,000) also scaffolded on the same page — accrues events, no charge.
+
 ## Open follow-ups (see `docs/launch-checklist.md` "Before real users")
 - Thai lawyer review of `/legal` (national IDs collected, PDPA applies).
 - Swap Stripe key to `sk_live_…` to charge for real.
