@@ -6,8 +6,9 @@ import { JobCard } from "@/components/JobCard";
 import { ButtonLink, Container } from "@/components/ui";
 import { VerificationLadder } from "@/components/VerificationBadge";
 import { getPublishedJobs } from "@/lib/queries";
-import { getDict } from "@/lib/i18n";
+import { getDict, getLocale } from "@/lib/i18n";
 import { INDUSTRIES } from "@/lib/constants";
+import { FAQ } from "@/lib/content/faq";
 
 export default async function HomePage({
   searchParams,
@@ -24,6 +25,13 @@ export default async function HomePage({
 
   const featured = await getPublishedJobs({ limit: 6 });
   const t = (await getDict()).home;
+  const locale = await getLocale();
+  const faqTeaserItems = [
+    FAQ[locale].sections[0].items[0], // What is SHIFTED?
+    FAQ[locale].sections[1].items[0], // Does it cost anything for workers?
+    FAQ[locale].sections[2].items[0], // What does it cost to post a job?
+    FAQ[locale].sections[2].items[1], // How is SHIFTED different from a job board?
+  ];
 
   return (
     <>
@@ -38,7 +46,7 @@ export default async function HomePage({
                 <span className="h-1.5 w-1.5 rounded-full bg-signal" />
                 {t.heroEyebrow}
               </p>
-              <h1 className="mt-5 text-5xl font-black leading-[1.02] tracking-tightest sm:text-6xl">
+              <h1 className="mt-5 text-6xl font-black leading-[0.98] tracking-tightest sm:text-7xl lg:text-8xl">
                 {t.heroTitleA}
                 <br />
                 {t.heroTitleB} <span className="text-signal">↗</span>
@@ -95,6 +103,20 @@ export default async function HomePage({
             <Pillar icon={<UsersIcon />} kicker={t.pillars.p4k} title={t.pillars.p4t} body={t.pillars.p4b} />
           </Container>
         </section>
+
+        {/* ---------------- How it works ---------------- */}
+        <Container className="py-16">
+          <div className="mx-auto max-w-xl text-center">
+            <p className="eyebrow">{t.howItWorksEyebrow}</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+              {t.howItWorksTitle}
+            </h2>
+          </div>
+          <div className="mt-12 grid gap-10 lg:grid-cols-2 lg:gap-16">
+            <StepsColumn label={t.howItWorksWorkers} steps={t.howItWorksWorkerSteps} />
+            <StepsColumn label={t.howItWorksEmployers} steps={t.howItWorksEmployerSteps} />
+          </div>
+        </Container>
 
         {/* ---------------- Verification explainer ---------------- */}
         <Container className="py-16">
@@ -171,6 +193,39 @@ export default async function HomePage({
           )}
         </Container>
 
+        {/* ---------------- FAQ teaser ---------------- */}
+        <section className="border-t border-stone-200 bg-stone-50">
+          <Container className="py-16">
+            <div className="mx-auto max-w-xl text-center">
+              <p className="eyebrow">{t.faqTeaserEyebrow}</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                {t.faqTeaserTitle}
+              </h2>
+            </div>
+            <div className="mx-auto mt-10 max-w-2xl divide-y divide-stone-200 rounded-[var(--radius-card)] border border-stone-200 bg-paper">
+              {faqTeaserItems.map((item) => (
+                <details
+                  key={item.q}
+                  className="group px-5 py-4 [&_summary::-webkit-details-marker]:hidden"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-ink">
+                    {item.q}
+                    <span className="shrink-0 text-stone-400 transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">{item.a}</p>
+                </details>
+              ))}
+            </div>
+            <div className="mt-6 text-center">
+              <Link href="/faq" className="text-sm font-medium text-signal hover:underline">
+                {t.faqTeaserCta} →
+              </Link>
+            </div>
+          </Container>
+        </section>
+
         {/* ---------------- CTA ---------------- */}
         <Container className="pb-8">
           <div className="relative overflow-hidden rounded-[var(--radius-card)] bg-ink px-8 py-14 text-paper sm:px-12">
@@ -221,6 +276,34 @@ function Pillar({
       <p className="eyebrow mt-4">{kicker}</p>
       <h3 className="mt-1.5 text-lg font-semibold tracking-tight">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-stone-600">{body}</p>
+    </div>
+  );
+}
+
+/** One side's numbered process — "How it works" section. */
+function StepsColumn({
+  label,
+  steps,
+}: {
+  label: string;
+  steps: { title: string; body: string }[];
+}) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-signal">{label}</p>
+      <ol className="mt-4 space-y-6">
+        {steps.map((step, i) => (
+          <li key={step.title} className="flex gap-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-paper">
+              {i + 1}
+            </span>
+            <div>
+              <p className="font-semibold tracking-tight text-ink">{step.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-stone-600">{step.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

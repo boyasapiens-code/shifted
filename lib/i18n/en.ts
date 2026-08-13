@@ -46,6 +46,41 @@ export const en = {
     verifyBody:
       "Candidates clear four levels of verified screening. Employers earn a four-layer trust badge. Each side can filter the other by verification level — so you only deal with the real, the qualified, and the fair.",
     verifyCta: "How it works",
+    howItWorksEyebrow: "How it works",
+    howItWorksTitle: "Simple on both sides.",
+    howItWorksWorkers: "For workers",
+    howItWorksWorkerSteps: [
+      {
+        title: "Browse verified roles",
+        body: "Real jobs from employers who've been checked out — no ghost listings, no guessing on pay.",
+      },
+      {
+        title: "Apply in one click",
+        body: "Answer a few fair screening questions if asked, then message the employer directly. No middleman.",
+      },
+      {
+        title: "Work, then build your name",
+        body: "Completed shifts turn into structured references — reliability and rehire signals that follow you to your next role.",
+      },
+    ],
+    howItWorksEmployers: "For employers",
+    howItWorksEmployerSteps: [
+      {
+        title: "Post the role, free",
+        body: "No subscription required to post. Boost a listing only if you want it seen faster.",
+      },
+      {
+        title: "See who's actually qualified",
+        body: "Verification levels, screening scores, and rehire signals from past employers — before you ever schedule an interview.",
+      },
+      {
+        title: "Hire with confidence",
+        body: "Message candidates directly, hire, and your own trust layer grows with every good outcome.",
+      },
+    ],
+    faqTeaserEyebrow: "Questions",
+    faqTeaserTitle: "Answers before you ask.",
+    faqTeaserCta: "See all FAQs",
     nowHiring: "Now hiring",
     featuredRoles: "Featured roles",
     viewAll: "View all",
