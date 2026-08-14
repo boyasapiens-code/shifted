@@ -190,19 +190,29 @@ export function isPaidPlan(plan: PlanTier | null | undefined): boolean {
 }
 
 /** Format a job's salary range as a compact THB string. */
+type SalaryLocale = "en" | "th";
+
+const SALARY_PERIOD_SUFFIX: Record<SalaryLocale, Record<string, string>> = {
+  en: { hour: "/hr", day: "/day", month: "/mo" },
+  th: { hour: "/ชม.", day: "/วัน", month: "/เดือน" },
+};
+
+/** Format a job's salary range as a compact THB string, localized. */
 export function formatSalary(
   min: number | null,
   max: number | null,
   period: string,
+  locale: SalaryLocale = "en",
 ): string | null {
   if (min == null && max == null) return null;
   const fmt = (n: number) => `฿${n.toLocaleString("en-US")}`;
+  // Equal min/max (a fixed daily/hourly rate typed into both fields) is a
+  // single value, not a degenerate "฿500–฿500" range.
   const range =
-    min != null && max != null
+    min != null && max != null && min !== max
       ? `${fmt(min)}–${fmt(max)}`
       : fmt((min ?? max) as number);
-  const per =
-    period === "hour" ? "/hr" : period === "day" ? "/day" : "/mo";
+  const per = SALARY_PERIOD_SUFFIX[locale][period] ?? SALARY_PERIOD_SUFFIX[locale].month;
   return `${range}${per}`;
 }
 

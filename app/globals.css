@@ -38,9 +38,11 @@
   --color-warning: #ffb23e; /* boost / amber */
   --color-danger: #e8553c; /* warm red */
 
-  /* Typography — Plus Jakarta Sans (loaded in layout) */
-  --font-sans:
-    "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Typography — Anuphan (loaded via next/font/google in app/layout.tsx).
+     One Thai+Latin family instead of a Latin-only face with an uncontrolled
+     Thai fallback. Static weights only go to 700 — see the h1 rule below. */
+  --font-sans: var(--font-anuphan), "Noto Sans Thai", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-sans);
 
   /* Radius — softer Daybreak scale */
@@ -76,6 +78,19 @@
     color: var(--color-ink);
   }
 
+  /* Consistent branded focus ring for any focusable element that doesn't
+     define its own focus-visible: utility — plain nav/footer <a> tags,
+     <summary> disclosure triggers, chip/filter links. Components that do
+     set an explicit focus-visible:ring-* utility (Button, Disclosure,
+     SaveJobButton, JobCard's stretched link) win over this: Tailwind's
+     utility layer is loaded after this base layer, so the more specific
+     utility class always takes precedence in the cascade. */
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   h1,
   h2,
   h3 {
@@ -83,9 +98,10 @@
     letter-spacing: var(--tracking-tightest);
     font-weight: 700;
   }
-  h1 {
-    font-weight: 800;
-  }
+  /* h1 used to go to 800 (Plus Jakarta Sans). Anuphan's heaviest static
+     weight is 700 — anything past that renders as browser-synthesized
+     (faked) bold, which looks visibly worse on Thai glyphs than a real
+     drawn weight. 700 is the ceiling everywhere now. */
 }
 
 @layer components {
@@ -167,5 +183,21 @@
       linear-gradient(to right, rgba(17, 17, 17, 0.035) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(17, 17, 17, 0.035) 1px, transparent 1px);
     background-size: 56px 56px;
+  }
+}
+
+/* Respect the OS-level motion preference: collapse hover-lift transforms
+   (.card-interactive), Disclosure chevron rotation, and all other
+   transition/animation timing to near-zero. State changes (color, ring,
+   border) still apply instantly — only the animated transition between
+   states is removed. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

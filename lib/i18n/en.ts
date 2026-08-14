@@ -3,17 +3,33 @@
 
 export const en = {
   nav: {
+    // Public candidate nav — kept deliberately short.
     findWork: "Find work",
-    findTalent: "Find talent",
     howItWorks: "How it works",
-    knowYourRights: "Know Your Rights",
-    marketing: "Marketing",
-    admin: "Admin",
+    rightsAndSafety: "Rights & Safety",
+    // Employer entry — a clearly separated CTA, not another nav item.
+    findTalent: "Find talent",
+    // Logged-in utilities (Messages + saved/activity stay visible; everything
+    // else — dashboard, role switch, language, sign out — lives in the
+    // account menu).
     messages: "Messages",
+    unreadMessages: "Unread messages",
+    savedJobs: "Saved jobs",
+    activity: "Activity",
+    account: "Account",
     dashboard: "Dashboard",
+    admin: "Admin",
+    switchWorker: "Worker",
+    switchEmployer: "Employer",
+    becomeEmployer: "Become an employer",
+    becomeWorker: "Become a worker",
+    language: "Language",
     signOut: "Sign out",
     logIn: "Log in",
     join: "Join SHIFTED",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
+    accountMenu: "Account menu",
   },
   home: {
     heroEyebrow: "A new generation of job platform",
@@ -95,18 +111,41 @@ export const en = {
     eyebrow: "Find work",
     heading: "Open roles",
     sub: "Vetted employers across hospitality, retail & lifestyle.",
+    searchLabel: "Keyword",
     searchPlaceholder: "Search title or keyword",
+    locationLabel: "Location",
     locationPlaceholder: "Location",
+    search: "Search",
+    moreFilters: "More filters",
+    fewerFilters: "Fewer filters",
+    filtersButton: (n: number) => (n > 0 ? `Filters (${n})` : "Filters"),
+    applyFilters: "Apply",
+    clearFilters: "Clear",
+    clearAll: "Clear all",
+    industryLabel: "Industry",
     allIndustries: "All industries",
+    typeLabel: "Employment type",
     anyType: "Any type",
+    verificationLabel: "Employer verification",
     anyEmployer: "Any employer",
-    verifiedL: "Verified employer L",
+    verifiedL: (level: number) => `Verified L${level}+`,
+    minSalaryLabel: "Minimum salary",
     minSalary: "Min salary (฿/mo)",
     shiftWork: "Shift work",
-    search: "Search",
     role: "role",
     roles: "roles",
     noResults: "No roles match your search. Try widening your filters.",
+    noJobsYet: "No jobs posted yet.",
+    searchError: "Something went wrong loading jobs. Please try again.",
+    sortLabel: "Sort",
+    sortRecommended: "Recommended",
+    sortNewest: "Newest",
+    sortSalary: "Highest salary",
+    activeFilters: "Filters:",
+    featured: "Featured",
+    responsive: "Responsive",
+    postedLabel: "Posted",
+    closeFilters: "Close",
   },
   jobDetail: {
     allRoles: "← All roles",
@@ -127,6 +166,8 @@ export const en = {
       "You're signed in as an employer. Switch to a candidate account to apply.",
     errorRateLimited:
       "You're doing that a lot. Please wait a moment and try again.",
+    errorGeneric:
+      "Something went wrong submitting your application. Please try again.",
     loginToApply: "Log in to apply",
     yourApplication: "Your application",
     screeningIntro: "A few quick questions from the employer:",
@@ -135,6 +176,120 @@ export const en = {
     oneClickApply: "One-click apply",
     goToEmployer: "Go to employer dashboard",
     finishSetup: "Finish setting up to apply",
+
+    // Section headings (structural rebuild)
+    aboutRole: "About the role",
+    scheduleWorkplace: "Schedule & workplace",
+    salaryBenefits: "Salary & benefits",
+    aboutEmployer: "About the employer",
+    similarJobs: "Similar jobs",
+    salaryNotSpecified: "Salary not specified",
+    experienceRequired: (years: number) => `${years}+ yrs experience`,
+
+    // Save / share / overflow
+    save: "Save",
+    saved: "Saved",
+    unsave: "Remove from saved",
+    share: "Share",
+    more: "More",
+
+    // Report — moved into an overflow action + real dialog
+    reportJob: "Report this listing",
+    reportDialogTitle: "Report this listing",
+    reportReasonLabel: "Reason",
+    reportReasons: {
+      defamation: "False or defamatory",
+      privacy: "Privacy violation",
+      harassment: "Harassment",
+      discrimination: "Discrimination",
+      fraud: "Fraud or scam",
+      other: "Other",
+    },
+    reportDetailLabel: "Details (optional)",
+    reportDetailPlaceholder: "Add any details that help us review this.",
+    reportCancel: "Cancel",
+    reportSubmit: "Submit report",
+    reportConfidential: "Reports are confidential.",
+    reportSuccess: "Report received — thank you, our team will review it.",
+    reportBusy:
+      "You've submitted several reports recently. Please wait a moment and try again.",
+
+    // Job-owner state
+    youOwnThisListing: "You own this listing",
+    manageListing: "Manage listing",
+    viewDetails: "View details",
+
+    // Verification explainer
+    verificationExplainer: "What does verification mean?",
+    verificationWhatChecked: "What was checked",
+    verificationNotGuarantee:
+      "Verification confirms these specific items were checked by a human reviewer — it isn't a guarantee of future performance, character, or fit.",
+  },
+  // Bilingual presentation copy for the verification explainer tooltip/panel
+  // on job surfaces. Level numbers (index + 1) match lib/constants.ts's
+  // VERIFICATION_LEVELS / EMPLOYER_VERIFICATION_LAYERS, which remain the
+  // source of truth for the data itself — this is a parallel, translated
+  // presentation layer for the new job-surface tooltip only.
+  verification: {
+    workerTitle: "Worker verification levels",
+    employerTitle: "Employer verification levels",
+    levels: [
+      {
+        name: "Identity & basics",
+        blurb: "A real, legally employable person.",
+        checked: "ID/passport, work permit, and required certifications.",
+      },
+      {
+        name: "Online persona",
+        blurb: "An authentic, consistent digital footprint.",
+        checked: "Linked social/professional profiles.",
+      },
+      {
+        name: "Credentials & history",
+        blurb: "A true, verified track record.",
+        checked: "Education, work history, and reference letters.",
+      },
+      {
+        name: "Skills & attitude",
+        blurb: "Proven skills and team fit.",
+        checked: "A short skills assessment.",
+      },
+    ],
+    employerLevels: [
+      {
+        name: "Legal & compliance",
+        blurb: "A real, registered, compliant business.",
+        checked: "Company registration, VAT, and social security registration.",
+      },
+      {
+        name: "Online presence",
+        blurb: "A real, active, consistent business.",
+        checked: "Official website, Google Business listing, and socials.",
+      },
+      {
+        name: "Customer reviews",
+        blurb: "A genuine, functioning operation.",
+        checked: "Verified customer feedback.",
+      },
+      {
+        name: "Peer & partner reviews",
+        blurb: "Credible to those who've worked with them.",
+        checked: "References from business partners and peers.",
+      },
+    ],
+    disclaimer:
+      "Verification confirms these specific items were checked by a human reviewer — it is not a guarantee of future performance, character, or fit.",
+  },
+  // Match-score copy — deliberately plain and non-hype. See lib/matching/.
+  match: {
+    label: (score: number) => `Profile match ${score}%`,
+    explain:
+      "An estimate based on your profile — pay, location, hours, and experience you've added. Not a hiring guarantee.",
+    lowData: "Add more to your profile to see a match estimate for this role.",
+  },
+  savedJobsPage: {
+    title: "Saved jobs",
+    empty: "No saved jobs yet. Tap the bookmark on any role to save it here.",
   },
   auth: {
     joinTitle: "Join SHIFTED",
@@ -252,7 +407,7 @@ export const en = {
       "The vetted talent network for Hospitality, Retail & Lifestyle. Your next chapter starts here.",
     forCandidates: "For candidates",
     forEmployers: "For employers",
-    solutions: "Solutions",
+    solutions: "Employer solutions",
     company: "Company",
     links: {
       findWork: "Find work",
