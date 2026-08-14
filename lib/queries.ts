@@ -20,38 +20,61 @@ export interface JobFilters {
   limit?: number;
 }
 
+async function buildPublishedJobsQuery(filters: JobFilters) {
+  const supabase = await createClient();
+  let query = supabase
+    .from("jobs")
+    .select(JOB_SELECT)
+    .eq("status", "published")
+    // Boosted (promoted) jobs surface first, then newest.
+    .order("boosted_until", { ascending: false, nullsFirst: false })
+    .order("published_at", { ascending: false });
+
+  if (filters.q) {
+    query = query.or(`title.ilike.%${filters.q}%,description.ilike.%${filters.q}%`);
+  }
+  if (filters.industry) query = query.eq("industry", filters.industry);
+  if (filters.employment_type)
+    query = query.eq("employment_type", filters.employment_type);
+  if (filters.location) query = query.ilike("location", `%${filters.location}%`);
+  if (filters.salaryMin) query = query.gte("salary_max", filters.salaryMin);
+  if (filters.shiftWork) query = query.eq("shift_work", true);
+  if (filters.employerMinLevel)
+    query = query.gte("employer.verification_level", filters.employerMinLevel);
+  if (filters.limit) query = query.limit(filters.limit);
+  return query;
+}
+
 /** Published jobs, newest first, with optional filters. Returns [] on failure. */
 export async function getPublishedJobs(
   filters: JobFilters = {},
 ): Promise<JobWithEmployer[]> {
   try {
-    const supabase = await createClient();
-    let query = supabase
-      .from("jobs")
-      .select(JOB_SELECT)
-      .eq("status", "published")
-      // Boosted (promoted) jobs surface first, then newest.
-      .order("boosted_until", { ascending: false, nullsFirst: false })
-      .order("published_at", { ascending: false });
-
-    if (filters.q) {
-      query = query.or(`title.ilike.%${filters.q}%,description.ilike.%${filters.q}%`);
-    }
-    if (filters.industry) query = query.eq("industry", filters.industry);
-    if (filters.employment_type)
-      query = query.eq("employment_type", filters.employment_type);
-    if (filters.location) query = query.ilike("location", `%${filters.location}%`);
-    if (filters.salaryMin) query = query.gte("salary_max", filters.salaryMin);
-    if (filters.shiftWork) query = query.eq("shift_work", true);
-    if (filters.employerMinLevel)
-      query = query.gte("employer.verification_level", filters.employerMinLevel);
-    if (filters.limit) query = query.limit(filters.limit);
-
-    const { data, error } = await query;
+    const { data, error } = await buildPublishedJobsQuery(filters);
     if (error) throw error;
     return (data ?? []) as JobWithEmployer[];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Same query as getPublishedJobs, but distinguishes "zero results" from "the
+ * query failed" — getPublishedJobs() alone can't (it swallows errors into
+ * the same empty array other callers already depend on), and the jobs index
+ * needs a real "search error" state distinct from a genuine no-results
+ * empty state. Additive — getPublishedJobs()'s existing callers/shape are
+ * untouched.
+ */
+export async function getPublishedJobsWithStatus(
+  filters: JobFilters = {},
+): Promise<{ jobs: JobWithEmployer[]; error: boolean }> {
+  try {
+    const { data, error } = await buildPublishedJobsQuery(filters);
+    if (error) throw error;
+    return { jobs: (data ?? []) as JobWithEmployer[], error: false };
+  } catch {
+    return { jobs: [], error: true };
   }
 }
 
@@ -122,5 +145,66 @@ export async function getJob(id: string): Promise<JobWithEmployer | null> {
     return data as JobWithEmployer;
   } catch {
     return null;
+  }
+}
+
+/** Job ids a candidate has saved — for cheap "is this saved?" checks across
+ *  a whole grid without re-querying per card. Empty set on any failure
+ *  (including signed-out, where the caller shouldn't be asking anyway). */
+export async function getSavedJobIds(candidateId: string): Promise<Set<string>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("saved_jobs")
+      .select("job_id")
+      .eq("candidate_id", candidateId);
+    if (error) throw error;
+    return new Set((data ?? []).map((r) => r.job_id as string));
+  } catch {
+    return new Set();
+  }
+}
+
+/** A few other published jobs in the same industry, for the job-detail
+ *  page's "Similar jobs" section. Real query (not fabricated) — genuinely
+ *  excludes the current job, only surfaces if there's real data to show. */
+export async function getSimilarJobs(
+  industry: Industry,
+  excludeId: string,
+  limit = 3,
+): Promise<JobWithEmployer[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(JOB_SELECT)
+      .eq("status", "published")
+      .eq("industry", industry)
+      .neq("id", excludeId)
+      .order("boosted_until", { ascending: false, nullsFirst: false })
+      .order("published_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []) as JobWithEmployer[];
+  } catch {
+    return [];
+  }
+}
+
+/** A candidate's saved jobs, most recently saved first. For /candidate/saved. */
+export async function getSavedJobs(candidateId: string): Promise<JobWithEmployer[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("saved_jobs")
+      .select(`created_at, job:jobs!inner(${JOB_SELECT})`)
+      .eq("candidate_id", candidateId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? [])
+      .map((r) => (Array.isArray(r.job) ? r.job[0] : r.job))
+      .filter(Boolean) as unknown as JobWithEmployer[];
+  } catch {
+    return [];
   }
 }

@@ -4,7 +4,8 @@ import { cn } from "./ui";
 const STATUS_STYLE: Record<SkillStatus, string> = {
   self_declared: "border border-stone-200 bg-paper text-stone-500",
   platform_verified: "border border-signal/30 bg-signal/5 text-signal",
-  employer_verified: "border-transparent bg-signal text-paper",
+  // text-ink not text-paper: white-on-coral fails contrast at this size (~2.8:1 vs 4.5:1 required).
+  employer_verified: "border-transparent bg-signal text-ink",
 };
 
 /** A single skill rendered by verification status. */

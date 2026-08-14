@@ -58,7 +58,11 @@ const buttonBase =
   "inline-flex items-center justify-center gap-2 rounded-full font-bold transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-signal text-paper shadow-[var(--shadow-sm)] hover:brightness-95",
+  // Dark-plum text on coral, not white: white-on-#ff6b4a measures ~2.8:1,
+  // below WCAG AA's 4.5:1 for this button's ~14-16px text. Ink-on-coral
+  // measures ~5.7:1 — keeps the existing brand coral untouched (no new
+  // shade to introduce) while actually meeting contrast.
+  primary: "bg-signal text-ink shadow-[var(--shadow-sm)] hover:brightness-95",
   outline: "border-[1.5px] border-ink text-ink hover:bg-ink hover:text-paper",
   ghost: "text-ink hover:bg-stone-100",
 };

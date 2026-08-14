@@ -24,7 +24,8 @@ export default async function HomePage({
   }
 
   const featured = await getPublishedJobs({ limit: 6 });
-  const t = (await getDict()).home;
+  const dict = await getDict();
+  const t = dict.home;
   const locale = await getLocale();
   const faqTeaserItems = [
     FAQ[locale].sections[0].items[0], // What is SHIFTED?
@@ -175,7 +176,7 @@ export default async function HomePage({
           {featured.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard key={job.id} job={job} locale={locale} t={dict} />
               ))}
             </div>
           ) : (
@@ -341,12 +342,9 @@ function PreviewCard() {
             </span>
           ))}
         </div>
-        <div className="mt-5 flex h-11 items-center justify-center rounded-full bg-signal text-sm font-bold text-paper">
+        <div className="mt-5 flex h-11 items-center justify-center rounded-full bg-signal text-sm font-bold text-ink">
           One-click apply
         </div>
-        <p className="mt-3 text-center text-xs text-stone-400">
-          92% would re-hire · 4.8 ★ from past employers
-        </p>
       </div>
     </div>
   );
